@@ -1,0 +1,37 @@
+Function Sprod(a,b) = Sumup(Trans[a]*[b]).;
+
+Function NormColumn(x,c;ng,dg,r,j) =
+	if Iszero([x[,c]]) = 0 then
+		ng := 0;
+		dg := 0;
+		r := Deg[x]/Cols[x];
+
+		for j=1,r do
+			ng := GCD(ng,Numer(x[j,c]));
+			dg := GCD(dg,Denom(x[j,c]));
+		od;
+
+		[x[,c]] := dg/ng*[x[,c]];
+	fi
+.;
+
+Function GramSchm(x;c,n,j) =
+	c := Cols[x];
+	NormColumn([x],1);
+	for n=2,c do
+		[w] := [x[,n]];
+
+		for j=1,n-1 do
+			[v] := [x[,j]];
+
+			if Iszero([v]) = 0 then
+				[x[,n]] := [x[,n]] - Sprod([v],[w])/Sprod([v],[v]) * [v];
+			fi;
+		od;
+		NormColumn([x],n);
+	od;
+	if c>=2 then
+		@([w],[v]);
+	fi;
+.;
+
