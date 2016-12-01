@@ -508,7 +508,7 @@ void System::normalize() {
         }
     }
  
-    // find non apperent singularity
+    // find non apparent singularity
     FermatExpression x0;
     
     for (auto it=singularities.begin(); !found && it != singularities.end(); ++it) {
@@ -531,7 +531,7 @@ void System::normalize() {
         x0 = it->first;
 
         cout << "WARNING: All singularities have integer eigenvalues." << endl
-             << "         choosing x0 = " << pstr(x0) << " which might be an apperent singularity." << endl;
+             << "         choosing x0 = " << pstr(x0) << " which might be an apparent singularity." << endl;
     }
 
     printEigenvalues();
