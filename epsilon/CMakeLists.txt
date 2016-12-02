@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(Boost_REALPATH ON)
 
-find_package(Boost 1.61.0 REQUIRED regex)
+find_package(Boost 1.59.0 REQUIRED regex)
 find_package(libFermat REQUIRED)
 find_path(PSTREAMS_INCLUDE_DIR pstream.h)
 

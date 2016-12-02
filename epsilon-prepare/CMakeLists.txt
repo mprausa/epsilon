@@ -7,10 +7,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 set(Boost_REALPATH ON)
 
-find_package(Boost 1.61.0 REQUIRED regex)
+find_package(Boost 1.59.0 REQUIRED regex)
 find_package(GiNaC 1.7.1 REQUIRED)
-find_package(yaml-cpp REQUIRED)
-
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${Boost_INCLUDE_DIR})
