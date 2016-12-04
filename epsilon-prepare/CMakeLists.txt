@@ -12,7 +12,6 @@ find_package(GiNaC 1.7.1 REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${Boost_INCLUDE_DIR})
-include_directories(${YAML_CPP_INCLUDE_DIR})
 include_directories(${GINAC_INCLUDE_DIRS})
 
 file(GLOB SOURCES src/*.cpp)
