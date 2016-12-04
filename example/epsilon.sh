@@ -10,6 +10,8 @@ epsilon --timings --symbols r3 --load out/matrix 1 1 --queue out/queue --fermat 
 	--block 4 4 --fuchsify --normalize --factorep-at -1 --left-fuchsify \
 	--block 5 9 --fuchsify --normalize --factorep-at  1 --left-fuchsify \
 	--block 1 9 --factorep-at -1 \
-	--write out/epsilon --export out/transformation.m
-exit $?
+	--write out/epsilon --export out/transformation.m || exit $?
+
+math -script check.m
+exit 0
 
