@@ -17,7 +17,7 @@ include_directories(${GINAC_INCLUDE_DIRS})
 file(GLOB SOURCES src/*.cpp)
 
 add_executable(epsilon-prepare ${SOURCES})
-target_link_libraries(epsilon-prepare ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} ${GINAC_LIBRARIES})
+target_link_libraries(epsilon-prepare ${Boost_LIBRARIES} ${GINAC_LIBRARIES})
 
 install (TARGETS epsilon-prepare DESTINATION bin)
 
