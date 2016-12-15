@@ -264,7 +264,7 @@ static void usage(string progname) {
     cerr << "OPTIONS:" << endl;
     cerr << setw(60) << "   --verbose"                                               << "Enable verbose output." << endl;
     cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
-    cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separted list." << endl;
+    cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
     cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
     cerr << endl;
 
