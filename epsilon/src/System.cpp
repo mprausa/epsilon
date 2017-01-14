@@ -944,26 +944,20 @@ int System::leftreduce(const FermatExpression &xj) {
 
     int rk = echelon->run();
 
-    if (rk != B.rows()*B.cols()) {
-        throw invalid_argument("underdetermined system of equations");
-    }
-
     FermatArray G(fermat,B.rows(),B.cols());
     G.assign("0");
 
     for (auto &r : *echelon) {
-        if (r.size() > 2) {
-            throw invalid_argument("more than two non-empty entries in row (this is a bug)");
-        }
         if (r.size() < 2) continue;
 
         auto it = r.begin();
         int pos = it->first;
 
-        ++it;
-        if (it->first != B.rows()*B.cols()+1) {
-            throw invalid_argument("matrix in wrong form (this is a bug)");
+        for (auto it2=r.begin(); it2 != r.end(); ++it2) {
+            it = it2;
         }
+       
+        if (it->first != B.rows()*B.cols()+1) continue; 
 
         int row = ((pos-1)/B.cols())+1;
         int col = ((pos-1)%B.cols())+1;
