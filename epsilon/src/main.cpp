@@ -3,7 +3,7 @@
 /*
  *  src/main.cpp
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,9 +112,9 @@ static void sourceFermatFunctions(Fermat *fermat) {
 
     file.close();
 
-    (*fermat)("&U");
+    (*fermat)("&(U=0)");
     (*fermat)("&(R=\'"+tmpdir+"/functions.fer\')"); 
-    (*fermat)("&U");
+    (*fermat)("&(U=1)");
 
     unlink((tmpdir+"/functions.fer").c_str());
     rmdir(tmpdir.c_str());
