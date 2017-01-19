@@ -10,7 +10,7 @@ expected = EpsilonRead["out/epsilon",CheckFuchsian->True,CheckEpsilon->True];
 t = Get["out/transformation.m"];
 t = t/.EpsilonSymRules[t];
 
-tinv = Inverse[t];
+tinv = Together[Inverse[t]];
 
 Print[If[And@@(PossibleZeroQ/@Flatten[tinv.m.t - tinv.D[t,x] - expected]),"OKAY :)","FAILED :("]];
 
