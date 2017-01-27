@@ -371,6 +371,7 @@ void Echelon::print(ostream &os) const {
 
     for (auto &r0 : rows) {
         for (auto &r : r0.second) {
+            if (cnt > 1) os << ",";
             os << "[" << (cnt++);
             for (auto &e : r) {
                 os << ",[" << e.first << "," << e.second.str() << "]";

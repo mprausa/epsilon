@@ -907,7 +907,7 @@ int System::leftreduce(const FermatExpression &xj) {
     EchelonBase *echelon;
 
     if (echfer) {
-        echelon = new EchelonFermat(fermat,B.rows()*B.cols(),B.rows()*B.cols()+1);
+        echelon = new EchelonFermat(fermat,B.rows()*B.cols(),B.rows()*B.cols()+2);
     } else {
         echelon = new Echelon(fermat);
     }
@@ -948,10 +948,14 @@ int System::leftreduce(const FermatExpression &xj) {
     G.assign("0");
 
     for (auto &r : *echelon) {
-        if (r.size() < 2) continue;
-
         auto it = r.begin();
         int pos = it->first;
+
+        if (pos == B.rows()*B.cols()+1) {
+            throw invalid_argument("linear system has no solution.");
+        }
+
+        if (r.size() < 2) continue;
 
         for (auto it2=r.begin(); it2 != r.end(); ++it2) {
             it = it2;
