@@ -119,7 +119,7 @@ static void solve2(const ex &expr, int mul, const symbol &x, map<ex,int,ex_is_le
     ex q = (c/a).normal();
 
     if (!is_a<numeric>(p) || !is_a<numeric>(q)) {
-        throw invalid_argument("polynomial has symbol coefficients.");
+        throw invalid_argument("polynomial has symbolic coefficients.");
     }
 
     ex z1 = ((-b - mysqrt(b*b - 4*a*c))/2/a).normal();
