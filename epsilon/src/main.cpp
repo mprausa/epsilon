@@ -266,6 +266,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
     cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
     cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
+    cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v." << endl;
     cerr << endl;
 
     cerr << "JOBS:" << endl;
@@ -320,6 +321,8 @@ static int cmdline(string progname, vector<string> parameters) {
             timings = true;
         } else if (*it == "--echelon-fermat") {
             echfer = true;
+        } else if (*it == "--half-ev") {
+            halfEV = true;
         } else if (*it == "--symbols") {
             if (++it == parameters.end()) usage(progname);
             symbols = parseSymbols(*it);

@@ -24,8 +24,9 @@
 #include <iostream>
 using namespace std;
 
+bool halfEV = false;
 
-static FermatExpression makeExpression(Fermat *fermat, int u, int v) {
+static FermatExpression makeExpression(Fermat *fermat, HalfInteger u, HalfInteger v) {
     stringstream strm;
 
     strm << "t-(" << u << "+" << v << "*ep)";
@@ -34,7 +35,7 @@ static FermatExpression makeExpression(Fermat *fermat, int u, int v) {
 }
 
 
-static bool checkEV(FermatExpression poly, int u, int v) {
+static bool checkEV(FermatExpression poly, HalfInteger u, HalfInteger v) {
     stringstream strm;
     strm << u << "+" << v << "*ep";
 
@@ -49,8 +50,8 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 	eigenvalues_t values;
     int ctr=0;
 
-	for (int i=0; i<=max; ++i) {
-		for (int j=-i; j<=i; ++j) {
+	for (HalfInteger i=0; i<=max; i.inc(halfEV)) {
+		for (HalfInteger j=-i; j<=i; j.inc(halfEV)) {
 			eigen_t ev;
             if (ctr == array.rows()) return values;
 
@@ -63,7 +64,7 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 
 				poly = poly/makeExpression(fermat,i,j);
 				
-				--j;
+				j.dec(halfEV);
 				continue;
 			}
 			if (i == 0) break;
@@ -76,7 +77,7 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 
 				poly = poly/makeExpression(fermat,j,i);
 				
-				--j;
+				j.dec(halfEV);
 				continue;
 			}
 			if (checkEV(poly,-i,j)) {
@@ -88,7 +89,7 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 
 				poly = poly/makeExpression(fermat,-i,j);
 				
-				--j;
+				j.dec(halfEV);
 				continue;
 			}
 			if (checkEV(poly,j,-i)) {
@@ -100,7 +101,7 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 
 				poly = poly/makeExpression(fermat,j,-i);
 				
-				--j;
+				j.dec(halfEV);
 				continue;
 			}
 

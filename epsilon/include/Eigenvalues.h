@@ -24,17 +24,20 @@
 
 #include <map>
 #include <FermatArray.h>
+#include <HalfInteger.h>
 
 typedef struct _eigen {
-    int u;
-    int v;
-            
+    HalfInteger u;
+    HalfInteger v;
+                
     bool operator<(const struct _eigen &other) const {
         return (u < other.u) || (u == other.u && v < other.v);
     }
 } eigen_t;
 
 typedef std::map<eigen_t,int> eigenvalues_t;
+
+extern bool halfEV;
 
 eigenvalues_t findEigenvalues(const FermatArray &array, int max);
 

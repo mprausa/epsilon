@@ -2364,15 +2364,15 @@ void System::printEigenvalues() {
             if (ev.u != 0) {
                 stringstream strm;
 
-                if (ev.u && ev.v > 1) {
+                if (ev.u != 0 && ev.v > 1) {
                     strm << ev.u << "+" << ev.v << "*ep";
-                } else if (ev.u && ev.v == 1) {
+                } else if (ev.u != 0 && ev.v == 1) {
                     strm << ev.u << "+ep";
-                } else if (ev.u && ev.v < -1) {
+                } else if (ev.u != 0 && ev.v < -1) {
                     strm << ev.u << ev.v << "*ep";
-                } else if (ev.u && ev.v == -1) {
+                } else if (ev.u != 0 && ev.v == -1) {
                     strm << ev.u << "-ep";
-                } else if (ev.u && !ev.v) {
+                } else if (ev.u != 0 && ev.v == 0) {
                     strm << ev.u;
                 } 
 
