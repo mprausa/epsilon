@@ -2425,6 +2425,8 @@ void System::printEigenvalues() {
     for (auto it = singularities.begin(); it != singularities.end(); ++it) {
         FermatExpression xj = it->first;
 
+        if (it->second.rankC != 0) continue;
+
         if (it == singularities.begin()) {
             cout << "eigenvalues:  ";
         } else {

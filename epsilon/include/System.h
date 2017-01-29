@@ -3,7 +3,7 @@
 /*
  *  include/System.h
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ class System {
         void lefttransformFull(const FermatArray &G, const FermatExpression &x1, int k);
 
         std::map<FermatExpression,FermatArray> exportFuchs() const;
+        
+        void printEigenvalues();
     private:
         bool projectorQ(const FermatExpression &x1, const FermatExpression &x2, FermatArray &Q);
         void projectorP(const FermatExpression &x1, FermatArray &P);
@@ -138,7 +140,6 @@ class System {
         FermatExpression binomi(int n, int k) const;
 
         void printSingularities() const;
-        void printEigenvalues();
 };
 
 #endif //__SYSTEM_H
