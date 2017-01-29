@@ -88,6 +88,7 @@ class System {
         void write(std::string filename) const;
         TransformationQueue *transformationQueue();
 
+        void analyze();
         void fuchsify();
         void normalize();
         void factorep();

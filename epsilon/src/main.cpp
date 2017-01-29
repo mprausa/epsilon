@@ -43,6 +43,7 @@ typedef struct {
         Export,
         Write,
         Block,
+        Analyze,
         Fuchsify,
         Normalize,
         FactorEp,
@@ -175,6 +176,11 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 cout << "block [" << it->start << "," << it->end << "] activated." << endl;
                 break;
             }
+            case Job::Analyze:
+                cout << endl << "analyze" << endl << "-------" << endl;
+                system->analyze();
+                cout << endl;
+                break;
             case Job::Fuchsify:
                 cout << endl << "fuchsify" << endl << "--------" << endl;
                 system->fuchsify();
@@ -279,6 +285,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl; 
     cerr << setw(60) << "   --export <filename>"                                     << "Export transformation matrix as Mathematica(R) file <filename>." << endl;
     cerr << setw(60) << "   --block <start> <end>"                                   << "Activate block from <start> to <end>." << endl;
+    cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
     cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
     cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
@@ -394,6 +401,10 @@ static int cmdline(string progname, vector<string> parameters) {
 
             if (++it == parameters.end()) usage(progname);
             job.end = atoi(it->c_str());
+
+            jobs.push_back(job);
+        } else if (*it == "--analyze") {
+            job.type = Job::Analyze;
 
             jobs.push_back(job);
         } else if (*it == "--fuchsify") {

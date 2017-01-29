@@ -452,7 +452,105 @@ map<FermatExpression,FermatArray> System::exportFuchs() const {
 TransformationQueue *System::transformationQueue() {
     return &tqueue;
 }
-    
+
+void System::analyze() {
+    auto check = [](const FermatArray &mat, int start, int end) -> int {
+        for (int c=end+1; c<=mat.cols(); ++c) {
+            FermatArray right(mat,start,end,c,mat.cols());
+
+            if (right.isZero()) return c-1;
+        }
+        
+        return mat.cols();
+    };
+
+    int start=1;
+    vector<pair<int,int>> blocks;
+
+    while(start <= nullMatrix.C.rows()) {
+        int size=1;
+        for(;;) {
+            int size1=size;
+
+            for (auto &a : _A) {
+                size1 = check(a.second.C,start,start+size-1) - start + 1;
+                if (size1 != size) break;
+            }
+
+            if (size1 != size) {
+                size = size1;
+                continue;
+            }
+
+            for (auto &b : _B) {
+                size1 = check(b.second.C,start,start+size-1) - start + 1;
+                if (size1 != size) break;
+            }
+                
+            if (size1 == size) break;
+            size = size1;
+        }
+        
+        blocks.push_back({start,start+size-1});
+
+        start += size;                
+    }
+
+    int cnt=1;
+    int offset=nullMatrix.A.rows();
+
+    for (auto &b : blocks) {
+        int start = b.first;
+        int end = b.second;
+ 
+        cout << "block " << (cnt++) << ": [" << start+offset << "," << end+offset << "]" << endl;
+
+        stringstream strm;
+        for (auto &s : singularities) {
+            int rank;
+            FermatArray mat = nullMatrix.C;
+
+            for (rank = s.second.rankC; rank >= 0; --rank) {
+                FermatArray mat(A(s.first,rank).C,start,end,start,end);
+                if (!mat.isZero()) break;
+            }
+
+            if (rank < 0) continue;
+
+            strm << "  " << pstr(s.first) << ":" << rank;
+        }
+
+        if (strm.str().size()) {
+            cout << "  singularities:" << strm.str() << endl;
+        } else {
+            cout << "  no singularities." << endl;
+        }                    
+
+        if (!nullMatrix.A.rows()) {
+            strm.str("");
+            strm.clear();
+
+            for (auto &s : singularities) {
+                int rank;
+                FermatArray mat = nullMatrix.C;
+
+                for (rank = s.second.rank; rank >= 0; --rank) {
+                    FermatArray mat(A(s.first,rank).C,start,end,1,start-1);
+                    if (!mat.isZero()) break;
+                }
+
+                if (rank < 0) continue;
+
+                strm << "  " << pstr(s.first) << ":" << rank;
+            }
+
+            if (strm.str().size()) {
+                cout << "  left singularities:" << strm.str() << endl;
+            }
+        }
+    }
+}
+ 
 void System::fuchsify() {
     FermatExpression x1,x2;
     FermatArray Q;
