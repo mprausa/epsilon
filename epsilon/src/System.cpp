@@ -597,6 +597,42 @@ void System::fuchsify() {
     }
 }
 
+void System::fuchsify(const FermatExpression &x1) {
+    FermatExpression x2;
+    FermatArray Q;
+
+    if (!singularities.count(x1)) {
+        cout << "no singularity at " << pstr(x1) << endl;
+        return;
+    }
+
+    printSingularities();
+
+    while (singularities[x1].rankC > 0) {
+        bool success = false;
+
+        for (auto &s : singularities) {
+            x2 = s.first;
+            if (x1 == x2) continue;
+            if (s.second.rankC < 0) continue;
+
+            if (projectorQ(x1,x2,Q)) {
+                success = true;
+                break;
+            }
+        }
+
+        if (!success) {
+            x2 = regularPoint();
+            projectorP(x1,Q);
+        }
+
+        balance(Q,x1,x2);
+
+        printSingularities();
+    }
+}
+
 void System::normalize() {
     bool found=false;
 
@@ -1097,6 +1133,28 @@ void System::leftfuchsify() {
             k = leftreduce(xj);
         }            
     }
+}
+
+void System::leftfuchsify(const FermatExpression &xj) {
+    int k;
+
+    if (!singularities.count(xj)) {
+        cout << "no singularity at " << pstr(xj) << endl;
+        return;
+    }
+    
+    for (k=singularities[xj].rank; k>=0 && A(xj,k).B.isZero(); --k);
+
+    if (k<0) {
+        cout << "off-diagonal block is not singular at " << pstr(xj) << endl;
+        return;
+    }
+
+    cout << "rank:    \t" << pstr(xj) << ":" << k << endl;
+
+    while (k>0) {
+        k = leftreduce(xj);
+    }            
 }
 
 bool System::projectorQ(const FermatExpression &x1, const FermatExpression &x2, FermatArray &Q) {
@@ -1873,185 +1931,296 @@ void System::transform(const FermatArray &T) {
 }
 
 void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int k) {
-    sing_t sing;
-
-    if (singularities[x1].rank < k) {
-        throw invalid_argument("rank to small (this is a bug)");
-    }
-
-    for (auto it = singularities.begin(); it != singularities.end(); ++it) {
-        int rankA;
-
-        if (it->first == infinity) continue;
-
-        for(rankA=it->second.rank; rankA>=0 && A(it->first,rankA).A.isZero(); --rankA);
-
-        if (it->second.rankC > 0 || rankA > 0) {
-            throw invalid_argument("diagonal blocks not in fuchsian form");
-        }
-    }
-
     if (x1 == infinity) {
         lefttransform_inf(G,k);
         return;
     }
 
-    //B
-    sing.point = x1;
-    sing.rank = k;
+    sing_t sing;
 
-    _A[sing].B += A(x1,0).C*G - G*A(x1,0).A  + G*k;
-    
+    //B
+   
+    for (auto &s : singularities) {
+        FermatExpression xj = s.first;
+        if (xj == x1 || xj == infinity) continue;
+
+        for (int n=0; n<=s.second.rank; ++n) {
+            FermatArray mat = nullMatrix.B;
+
+            for (int i=0; n+i <= s.second.rank; ++i) {
+                mat += (A(xj,n+i).C*G - G*A(xj,n+i).A) * powi(-1,k)*binomi(k+i-1,i)/pow(x1-xj,k+i);
+            }
+
+            if (mat.isZero()) continue;
+
+            sing.point = xj;
+            sing.rank = n;
+
+            if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+            _A[sing].B += mat;
+        }
+    }
+
     for (int n=0; n<k; ++n) {
+        FermatArray mat = nullMatrix.B;
+
+        for (auto &a : _A) {
+            FermatExpression xj = a.first.point;
+            int i = a.first.rank;
+
+            if (xj == x1) continue;
+
+            mat += (a.second.C*G - G*a.second.A) * powi(-1,i+1) * binomi(k+i-n-1,i) / pow(xj-x1,k+i-n);
+        }
+
+        for (int i=0; i+k-n-1 <= kmax; ++i) {
+            mat += (B(i+k-n-1).C*G - G*B(i+k-n-1).A)*pow(x1,i)*binomi(i+k-n-1,i);
+        }
+        
+        if (mat.isZero()) continue;
+
         sing.point = x1;
         sing.rank = n;
 
-        for (auto it=singularities.begin(); it != singularities.end(); ++it) {
-            FermatExpression xj = it->first;
-            if (xj == x1 || xj == infinity) continue;
+        if (!_A.count(sing)) _A[sing] = nullMatrix;
 
-            _A[sing].B -= (A(xj,0).C*G - G*A(xj,0).A)/pow(xj-x1,k-n);
-        }
+        _A[sing].B += mat;
     }
-        
-    for (auto it=singularities.begin(); it != singularities.end(); ++it) {
-        FermatExpression xj = it->first;
-        if (xj == x1 || xj == infinity) continue;
 
-        sing.point = xj;
-        sing.rank = 0;
+    sing.point = x1;
+    sing.rank = k;
 
-        _A[sing].B += (A(xj,0).C*G - G*A(xj,0).A)/pow(xj-x1,k);
+    _A[sing].B += A(x1,0).C*G - G*A(x1,0).A + G*k;
+
+    for (int n=k+1; n-k <= singularities[x1].rank; ++n) {
+        FermatArray mat = A(x1,n-k).C*G - G*A(x1,n-k).A;
+
+        if (mat.isZero()) continue;
+
+        sing.point = x1;
+        sing.rank = n;
+
+        if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+        _A[sing].B += mat;
+    }
+
+    for (int n=0; n<=kmax; ++n) {
+        FermatArray mat = nullMatrix.B;
+
+        for (int m=0; n+m+k <= kmax; ++m) {
+            for (int i=0; i+n+m+k <= kmax; ++i) {
+                mat += (B(i+n+m+k).C*G - G*B(i+n+m+k).A) * powi(-1,m) * pow(x1,m+i) * binomi(n+m,n) * binomi(i+n+m+k,i);
+            }
+        }            
+
+        if (mat.isZero()) continue;
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].B += mat;
     }
 
     //D
     
-    for (int n=0; n<k; ++n) {
-        sing.point = x1;
-        sing.rank = n;
+    for (auto &s : singularities) {
+        FermatExpression xj = s.first;
+        if (xj == x1 || xj == infinity) continue;
 
-        for (auto it = _A.begin(); it != _A.end(); ++it) {
-            FermatExpression xj = it->first.point;
-            int i = it->first.rank;
+        for (int n=0; n<=s.second.rank; ++n) {
+            FermatArray mat = nullMatrix.D;
+
+            for (int i=0; n+i <= s.second.rank; ++i) {
+                mat += A(xj,n+i).E*G * powi(-1,k)*binomi(k+i-1,i)/pow(x1-xj,k+i);
+            }
+
+            if (mat.isZero()) continue;
+
+            sing.point = xj;
+            sing.rank = n;
+
+            if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+            _A[sing].D += mat;
+        }
+    }
+    
+    for (int n=0; n<k; ++n) {
+        FermatArray mat = nullMatrix.D;
+
+        for (auto &a : _A) {
+            FermatExpression xj = a.first.point;
+            int i = a.first.rank;
 
             if (xj == x1) continue;
 
-            _A[sing].D -= it->second.E*G*powi(-1,i)*binomi(k+i-n-1,i)/pow(xj-x1,k+i-n);
+            mat += a.second.E*G * powi(-1,i+1) * binomi(k+i-n-1,i) / pow(xj-x1,k+i-n);
         }
-        for (int i=0; i+k-n-1 <= kmax; ++i) {
-            _A[sing].D += B(i+k-n-1).E*G*pow(x1,i)*binomi(i+k-n-1,i);
-        }
-    }
 
-    for (int n=k; n<=singularities[x1].rank+k; ++n) {
+        for (int i=0; i+k-n-1 <= kmax; ++i) {
+            mat += B(i+k-n-1).E*G * pow(x1,i) * binomi(i+k-n-1,i);
+        }
+        
+        if (mat.isZero()) continue;
+
         sing.point = x1;
         sing.rank = n;
 
+        if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+        _A[sing].D += mat;
+    }
+    
+    for (int n=k; n-k <= singularities[x1].rank; ++n) {
         FermatArray mat = A(x1,n-k).E*G;
 
-        if (_A.count(sing)) {
-            _A[sing].D += mat;
-        } else if (!mat.isZero()) {
-            _A[sing].A = nullMatrix.A;
-            _A[sing].B = nullMatrix.B;
-            _A[sing].C = nullMatrix.C;
-            _A[sing].D = mat;
-            _A[sing].E = nullMatrix.E;
-            _A[sing].F = nullMatrix.F;
-        }
+        if (mat.isZero()) continue;
+
+        sing.point = x1;
+        sing.rank = n;
+
+        if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+        _A[sing].D += mat;
     }
- 
-    for (auto it = _A.begin(); it != _A.end(); ++it) {
-        FermatExpression xj = it->first.point;
-        int n = it->first.rank;
-
-        if (xj == x1) continue;
-
-        for (int i=0; n+i <= singularities[xj].rank; ++i) {
-            it->second.D += A(xj,n+i).E*G*binomi(k+i-1,i)*powi(-1,k)/pow(x1-xj,k+i);
-        }
-    }
-
-    for (auto it = _B.begin(); it != _B.end(); ++it) {
-        int n = it->first;
+    
+    for (int n=0; n<=kmax; ++n) {
+        FermatArray mat = nullMatrix.D;
 
         for (int m=0; n+m+k <= kmax; ++m) {
             for (int i=0; i+n+m+k <= kmax; ++i) {
-                it->second.D += B(i+n+m+k).E*G*powi(-1,m)*pow(x1,m+i)*binomi(n+m,n)*binomi(i+n+m+k,i);
+                mat += B(i+n+m+k).E*G * powi(-1,m) * pow(x1,m+i) * binomi(n+m,n) * binomi(i+n+m+k,i);
             }
-        }
+        }            
+
+        if (mat.isZero()) continue;
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].D += mat;
     }
 
     updatePoincareRanks();
-    
     tqueue.lefttransform(G,x1,k);
 }
 
 void System::lefttransform_inf(const FermatArray &G, int k) {
-    sing_t sing;
-
     //B
-    _B[k-1].B -= G*k;
+    
+    for (auto &s : singularities) {
+        FermatExpression xj = s.first;
 
-    for (int n=0; n<=k-1; ++n) {
-        for (auto it=singularities.begin(); it != singularities.end(); ++it) {
-            FermatExpression xj = it->first;
-            if (xj == infinity) continue;
-
-            _B[n].B += (A(xj,0).C*G - G*A(xj,0).A)*pow(xj,k-n-1);
-        }
-    }
-
-    for (auto it=singularities.begin(); it != singularities.end(); ++it) {
-        FermatExpression xj = it->first;
         if (xj == infinity) continue;
 
-        sing.point = xj;
-        sing.rank = 0;
+        for (int n=0; n<=s.second.rank; ++n) {
+            FermatArray mat = nullMatrix.B;
 
-        _A[sing].B += (A(xj,0).C*G - G*A(xj,0).A)*pow(xj,k);
+            for (int i=0;  i<=k; ++i) {
+                mat += (A(xj,n+k-i).C*G - G*A(xj,n+k-i).A) * pow(xj,i) * binomi(k,k-i);
+            }
+            if (mat.isZero()) continue;
+
+            sing_t sing;
+
+            sing.point = xj;
+            sing.rank = n;
+
+            if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+            _A[sing].B += mat;
+        }        
     }
 
-    //D
-    for (auto it=_A.begin(); it != _A.end(); ++it) {
-        FermatExpression xj = it->first.point;
-        int n = it->first.rank;
+    for (int n=0; n<=k-1; ++n) {
+        FermatArray mat = nullMatrix.B;
 
-        for (int i=0; i<=k; ++i) {
-            it->second.D += A(xj,n+k-i).E*G*pow(xj,i)*binomi(k,k-i);
-        }
-    }
-
-    for (int n=0; n<k; ++n) {
-        for (auto it=singularities.begin(); it != singularities.end(); ++it) {
-            FermatExpression xj = it->first;
+        for (auto &s : singularities) {
+            FermatExpression xj = s.first;
             if (xj == infinity) continue;
 
             for (int m=0; m<=k-n-1; ++m) {
                 for (int i=0; i<=m; ++i) {
-                    _B[n].D += A(xj,i).E*G*powi(-1,k-n-m-1)*pow(xj,k-n-i-1)*binomi(k-m-1,n)*binomi(k,k+i-m);
+                    mat += (A(xj,i).C*G - G*A(xj,i).A) * powi(-1,k-n-m-1) * pow(xj,k-n-i-1) * binomi(k-m-1,n) * binomi(k,k+i-m);
                 }
             }
         }
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].B += mat;
     }
 
-    for (int n=k; n<=kmax+k; ++n) {
+    if (!_B.count(k-1)) _B[k-1] = nullMatrix;
+    _B[k-1].B -= G*k;
+
+    for (int n=k; n-k <= kmax; ++n) {
+        FermatArray mat = B(n-k).C*G - G*B(n-k).A;
+
+        if (mat.isZero()) continue;
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].B += mat;
+    }
+
+    //D
+    
+    for (auto &s : singularities) {
+        FermatExpression xj = s.first;
+
+        if (xj == infinity) continue;
+
+        for (int n=0; n<=s.second.rank; ++n) {
+            FermatArray mat = nullMatrix.D;
+
+            for (int i=0;  i<=k; ++i) {
+                mat += A(xj,n+k-i).E*G * pow(xj,i) * binomi(k,k-i);
+            }
+            if (mat.isZero()) continue;
+
+            sing_t sing;
+
+            sing.point = xj;
+            sing.rank = n;
+
+            if (!_A.count(sing)) _A[sing] = nullMatrix;
+
+            _A[sing].D += mat;
+        }        
+    }
+
+    for (int n=0; n<=k-1; ++n) {
+        FermatArray mat = nullMatrix.D;
+
+        for (auto &s : singularities) {
+            FermatExpression xj = s.first;
+
+            if (xj == infinity) continue;
+
+            for (int m=0; m<=k-n-1; ++m) {
+                for (int i=0; i<=m; ++i) {
+                    mat += A(xj,i).E*G * powi(-1,k-n-m-1) * pow(xj,k-n-i-1) * binomi(k-m-1,n) * binomi(k,k+i-m);
+                }
+            }
+        }
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].D += mat;
+    }
+
+    for (int n=k; n-k <= kmax; ++n) {
         FermatArray mat = B(n-k).E*G;
 
-        if (_B.count(n)) {
-           _B[n].D += mat;
-        } else if (!mat.isZero()) {
-            _B[n].A = nullMatrix.A;
-            _B[n].B = nullMatrix.B;
-            _B[n].C = nullMatrix.C;
-            _B[n].D = mat;
-            _B[n].E = nullMatrix.E;
-            _B[n].F = nullMatrix.F;
-        }
+        if (mat.isZero()) continue;
+
+        if (!_B.count(n)) _B[n] = nullMatrix;
+
+        _B[n].D += mat;
     }
-
+    
     updatePoincareRanks();
-
     tqueue.lefttransform(G,infinity,k);
 }
 

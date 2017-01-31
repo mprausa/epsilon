@@ -90,12 +90,14 @@ class System {
 
         void analyze();
         void fuchsify();
+        void fuchsify(const FermatExpression &x1);
         void normalize();
         void factorep();
         void factorep(int mu);
         void leftranks();
         int leftreduce(const FermatExpression &xj);
         void leftfuchsify();
+        void leftfuchsify(const FermatExpression &xj);
 
         void balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);
         void transform(const FermatArray &T); 

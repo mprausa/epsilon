@@ -46,12 +46,14 @@ typedef struct {
         Analyze,
         Eigenvalues,
         Fuchsify,
+        FuchsifyAt,
         Normalize,
         FactorEp,
         FactorEpAt,
         LeftRanks,
         LeftReduce,
         LeftFuchsify,
+        LeftFuchsifyAt,
         Dyson
     } type;
     
@@ -192,6 +194,22 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 system->fuchsify();
                 cout << endl;
                 break;
+            case Job::FuchsifyAt: {
+                FermatExpression xj;
+
+                cout << endl << "fuchsify @ " << it->sing << endl << "-------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->fuchsify(xj);
+
+                cout << endl;
+                break;
+            }
             case Job::Normalize:
                 cout << endl << "normalize" << endl << "---------" << endl;
                 system->normalize();
@@ -233,6 +251,22 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 system->leftfuchsify();
                 cout << endl;
                 break;
+            case Job::LeftFuchsifyAt: {
+                FermatExpression xj;
+
+                cout << endl << "left-fuchsify @ " << it->sing << endl << "------------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->leftfuchsify(xj);
+
+                cout << endl;
+                break;
+            }
             case Job::Dyson: {
                 cout << endl << "dyson" << endl << "-----" << endl;
                 Dyson dyson(*system);
@@ -254,7 +288,7 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 diff.tv_nsec = end.tv_nsec-start.tv_nsec;
             }
 
-            cout << setw(16) << left << "["+it->name+"]" << diff.tv_sec << "." << setfill('0') << setw(3) << right << diff.tv_nsec/1000000 << "s" << setfill(' ') << endl;
+            cout << setw(25) << left << "["+it->name+"]" << diff.tv_sec << "." << setfill('0') << setw(3) << right << diff.tv_nsec/1000000 << "s" << setfill(' ') << endl;
         }
     }
 
@@ -294,10 +328,12 @@ static void usage(string progname) {
     cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
     cerr << setw(60) << "   --eigenvalues"                                           << "Print eigenvalues." << endl;
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
+    cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
     cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
     cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
     cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
-    cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --left-fuchsify-at <sing>"                               << "Reduce Poincare rank of block to the left of the active block to zero." << endl;
     cerr << setw(60) << "   --left-ranks"                                            << "Show Poincare ranks of block to the left of active block." << endl;
     cerr << setw(60) << "   --left-reduce <sing>"                                    << "Reduce Poincare rank of block to the left of active block at singularity <sing> (manual approach). [arXiv:1411.0911, Section 7]" << endl;
     cerr << setw(60) << "   --dyson <filename> <order> (GPL|HPL|HPLalt) (mma|form)"  << "Write Dyson operator up to order <order> in ep to <filename>." << endl;
@@ -422,6 +458,13 @@ static int cmdline(string progname, vector<string> parameters) {
             job.type = Job::Fuchsify;
 
             jobs.push_back(job);
+        } else if (*it == "--fuchsify-at") {
+            job.type = Job::FuchsifyAt;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
+
+            jobs.push_back(job);
         } else if (*it == "--normalize") {
             job.type = Job::Normalize;
 
@@ -450,6 +493,13 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--left-fuchsify") {
             job.type = Job::LeftFuchsify;
+
+            jobs.push_back(job);
+        } else if (*it == "--left-fuchsify-at") {
+            job.type = Job::LeftFuchsifyAt;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
 
             jobs.push_back(job);
         } else if (*it == "--dyson") {
@@ -527,7 +577,7 @@ static int cmdline(string progname, vector<string> parameters) {
             diff.tv_nsec = end.tv_nsec-start.tv_nsec;
         }
 
-        cout << setw(16) << left << "[total time]" << diff.tv_sec << "." << setfill('0') << setw(3) << right << diff.tv_nsec/1000000 << "s" << setfill(' ') << endl;
+        cout << setw(25) << left << "[total time]" << diff.tv_sec << "." << setfill('0') << setw(3) << right << diff.tv_nsec/1000000 << "s" << setfill(' ') << endl;
     }
 
     infinity = FermatExpression();
