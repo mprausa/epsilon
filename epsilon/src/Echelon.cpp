@@ -249,7 +249,7 @@ int Echelon::run() {
     int cnt=0;
     int prog=50;
 
-    cout << "forward elimination:  ";
+    cout << "forward elimination:  " << flush;
 
     for (auto it = rows.begin(); it != rows.end(); ++it) {
         int newprog = 50 - (++cnt)*50/maxrk;
@@ -292,7 +292,7 @@ int Echelon::run() {
     cnt = 0;
     prog=50;
     
-    cout << "back substitution:    ";
+    cout << "back substitution:    " << flush;
 
     for (auto it = rows.rbegin(); it != rows.rend(); ++it) {
         int newprog = 50 - (++cnt)*50/rk;
