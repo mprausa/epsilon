@@ -85,8 +85,17 @@ void TransformationQueue::load(string _filename) {
         transformation_t trans;
 
         str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
+        if (str == "") continue;
 
-        if (regex_match(str.c_str(),what,regex("^B\\(([^,]+),([^,]+)\\):(.*)$"))) {
+        size_t colon = str.find(':');
+        if (colon == string::npos) {
+            throw invalid_argument("parse error");
+        }
+        
+        string str0(str,0,colon);
+        str = str.erase(0,colon+1);
+
+        if (regex_match(str0.c_str(),what,regex("^B\\(([^,]+),([^,]+)\\)$"))) {
             trans.type = transformation_t::Balance;
             string xstr;
 
@@ -106,14 +115,14 @@ void TransformationQueue::load(string _filename) {
 
             trans.k = 0;
 
-            trans.T = FermatArray(fermat,string(what[3].first,what[3].second));
-        } else if (regex_match(str.c_str(),what,regex("^T:(.*)$"))) {
+            trans.T = FermatArray(fermat,str);
+        } else if (str0 == "T") {
             trans.type = transformation_t::Transformation;
             trans.x1 = trans.x2 = zero;
             trans.k = 0;
 
-            trans.T = FermatArray(fermat,string(what[1].first,what[1].second));
-        } else if (regex_match(str.c_str(),what,regex("^L\\(([^,]+),([^,]+)\\):(.*)$"))) {
+            trans.T = FermatArray(fermat,str);
+        } else if (regex_match(str0.c_str(),what,regex("^L\\(([^,]+),([^,]+)\\)$"))) {
             trans.type = transformation_t::LeftTrans;
             string xstr;
 
@@ -129,7 +138,7 @@ void TransformationQueue::load(string _filename) {
 
             trans.x2 = zero;
 
-            trans.T = FermatArray(fermat,string(what[3].first,what[3].second));
+            trans.T = FermatArray(fermat,str);
         } else {
             throw invalid_argument("parse error.");
         }

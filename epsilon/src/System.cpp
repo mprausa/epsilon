@@ -90,17 +90,24 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
 
 	while (getline(file,str)) {
         str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
+        if (str == "") continue;
 
-        if (regex_match(str.c_str(),what,regex("^A\\[([^,]+),(\\d+)\\]:(.*)$"))) {
+        size_t colon = str.find(':');
+        if (colon == string::npos) {
+            throw invalid_argument("parse error");
+        }
+
+        string str0(str,0,colon);
+        str = str.erase(0,colon+1);
+        
+        if (regex_match(str0.c_str(),what,regex("^A\\[([^,]+),(\\d+)\\]$"))) {
             sing_t singularity;
-            string mstr;
             TriangleBlockMatrix mat;
 
             singularity.point = FermatExpression(fermat,string(what[1].first,what[1].second));
             singularity.rank = atoi(string(what[2].first,what[2].second).c_str());
-            mstr = string(what[3].first,what[3].second);
           
-            FermatArray array(fermat,mstr);
+            FermatArray array(fermat,str);
             r = array.rows();
             if (end<0) end=r;
 
@@ -134,16 +141,14 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
                     singularities[singularity.point].rank = singularity.rank;
                 }
             }
-        } else if (regex_match(str.c_str(),what,regex("^B\\[(\\d+)\\]:(.*)$"))) {
+        } else if (regex_match(str0.c_str(),what,regex("^B\\[(\\d+)\\]$"))) {
             int k;
-            string mstr;
             TriangleBlockMatrix mat;
             int r;
 
             k = atoi(string(what[1].first,what[1].second).c_str());
-            mstr = string(what[2].first,what[2].second);
             
-            FermatArray array(fermat,mstr);
+            FermatArray array(fermat,str);
             r = array.rows();
             if (end<0) end=r;
 
