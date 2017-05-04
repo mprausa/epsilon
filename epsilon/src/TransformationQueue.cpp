@@ -3,7 +3,7 @@
 /*
  *  src/TransformationQueue.cpp
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,11 +22,10 @@
 #include <TransformationQueue.h>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
+#include <regex>
 #include <System.h>
-#include <boost/range/algorithm/remove_if.hpp>
-#include <boost/regex.hpp>
 using namespace std;
-using namespace boost;
 
 TransformationQueue::TransformationQueue(const TransformationQueue &other) {
     before = after = 0;
@@ -85,7 +84,7 @@ void TransformationQueue::load(string _filename) {
     while (getline(file,str)) {
         transformation_t trans;
 
-        str.erase(remove_if(str, ::isspace), str.end());
+        str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
 
         if (regex_match(str.c_str(),what,regex("^B\\(([^,]+),([^,]+)\\):(.*)$"))) {
             trans.type = transformation_t::Balance;

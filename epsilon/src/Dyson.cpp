@@ -3,7 +3,7 @@
 /*
  *  src/Dyson.cpp
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,10 +22,13 @@
 #include <Dyson.h>
 #include <fstream>
 #include <iostream>
-#include <boost/functional/hash.hpp>
-
+#include <sstream>
 using namespace std;
-using namespace boost;
+
+template <class T> inline void hash_combine(std::size_t& seed, const T& v) {
+	std::hash<T> hasher;
+	seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
 
 Dyson::GPL::GPL() {
     _arg = "";
@@ -184,7 +187,7 @@ void Dyson::Term::calchash() {
     deque<FermatExpression> indices;
 
     indices = _xGPL.indices();
-    
+   
     hash_combine(_hash,_xGPL.arg());
     hash_combine(_hash,indices.size());
     for (auto it = indices.begin(); it != indices.end(); ++it) {
@@ -330,19 +333,18 @@ string Dyson::Expression::str(Dyson::pltype_t type, Dyson::format_t format) {
     return strm.str();
 }
 
-Dyson::ExMatrix::ExMatrix(int dim) : multi_array(extents[dim][dim]) {
+Dyson::ExMatrix::ExMatrix(int dim) {
+    this->dim = dim;
+    data.resize(dim*dim);
 }
 
 Dyson::ExMatrix::~ExMatrix() {
 }
 
 Dyson::ExMatrix &Dyson::ExMatrix::operator+=(const ExMatrix &other) {
-    int rows = shape()[0];
-    int cols = shape()[0];
-   
-    for (int r=0; r<rows; ++r) {
-        for (int c=0; c<cols; ++c) {
-            (*this)[r][c] += other[r][c];
+    for (int r=0; r<dim; ++r) {
+        for (int c=0; c<dim; ++c) {
+            (*this)(r,c) += other(r,c);
         }
     }
 
@@ -350,12 +352,11 @@ Dyson::ExMatrix &Dyson::ExMatrix::operator+=(const ExMatrix &other) {
 }
 
 Dyson::ExMatrix Dyson::ExMatrix::integrate(const FermatExpression &xj) {
-    int dim = shape()[0];
     ExMatrix n(dim);
 
     for (int r=0; r<dim; ++r) {
         for (int c=0; c<dim; ++c) {
-            n[r][c] = (*this)[r][c].integrate(xj);
+            n(r,c) = (*this)(r,c).integrate(xj);
         }
     }
 
@@ -363,19 +364,18 @@ Dyson::ExMatrix Dyson::ExMatrix::integrate(const FermatExpression &xj) {
 }      
  
 Dyson::ExMatrix Dyson::ExMatrix::lmul(const FermatArray &left) const {
-    int dim = shape()[0];
     ExMatrix nn(dim);
 
     for (int r=0; r<dim; ++r) {
         for (int c=0; c<dim; ++c) {
             for (int n=0; n<dim; ++n) {
-                Expression exr = (*this)[n][c];
+                Expression exr = (*this)(n,c);
                 if (exr.empty()) continue;                
 
                 FermatExpression exl = left(r+1,n+1);
                 if (exl.str() == "0") continue;
 
-                nn[r][c] += exr * exl;
+                nn(r,c) += exr * exl;
             }
         }
     }
@@ -383,22 +383,35 @@ Dyson::ExMatrix Dyson::ExMatrix::lmul(const FermatArray &left) const {
     return nn;
 }
 
+Dyson::Expression &Dyson::ExMatrix::operator() (int r, int c) {
+    if (r >= dim || c >= dim) {
+        throw out_of_range("row or column out of range.");
+    }
+
+    return data[r*dim + c];
+}
+
+const Dyson::Expression &Dyson::ExMatrix::operator() (int r, int c) const {
+    if (r >= dim || c >= dim) {
+        throw out_of_range("row or column out of range.");
+    }
+
+    return data[r*dim + c];
+}
 
 string Dyson::ExMatrix::str(pltype_t type) {
     stringstream strm;
-    int rows = shape()[0];
-    int cols = shape()[1];
     
     strm << "{";
 
-    for (int r=0; r<rows; ++r) {
+    for (int r=0; r<dim; ++r) {
         strm << "{";
-        for (int c=0; c<cols; ++c) {
-            strm << (*this)[r][c].str(type,fMma);
-            if (c < cols-1) strm << ",";
+        for (int c=0; c<dim; ++c) {
+            strm << (*this)(r,c).str(type,fMma);
+            if (c < dim-1) strm << ",";
         }
         strm << "}";
-        if (r < cols-1) strm << ",";
+        if (r < dim-1) strm << ",";
     }
     strm << "}";
 
@@ -432,7 +445,7 @@ Dyson::Dyson(const System &system) {
     one[oneterm] = FermatExpression(fermat,"1");
 
     for (int n=0; n<dim; ++n) {
-        U0[n][n] = one;
+        U0(n,n) = one;
     }
 
     Un.push_back(U0);
@@ -476,10 +489,10 @@ void Dyson::writeMma(string filename, pltype_t type) {
             file << "    SeriesData[ep,0,{";
 
             for (int n=0; n<Un.size(); ++n) {
-                if (!Un[n][r][c].size() && first<0) continue;
+                if (!Un[n](r,c).size() && first<0) continue;
                 if (first < 0) first = n;
 
-                file << Un[n][r][c].str(type,fMma);
+                file << Un[n](r,c).str(type,fMma);
                 if (n<Un.size()-1) file << ",";
             }
             if (first < 0) first = Un.size();
@@ -511,7 +524,7 @@ void Dyson::writeForm(string filename, pltype_t type) {
         file << endl << "* order ep^" << n << endl;
         for (int r=0; r<dim; ++r) {
             for (int c=0; c<dim; ++c) {
-                file << "id dyson(" << r+1 << "," << c+1 << "," << n << ",x?,x0?) = " << Un[n][r][c].str(type,fForm) << ";" << endl;
+                file << "id dyson(" << r+1 << "," << c+1 << "," << n << ",x?,x0?) = " << Un[n](r,c).str(type,fForm) << ";" << endl;
             }
         }
     }

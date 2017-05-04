@@ -30,10 +30,8 @@
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
-#include <boost/range/algorithm/remove_if.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 using namespace std;
-using namespace boost;
 
 FermatExpression infinity;
 
@@ -91,7 +89,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
     kmaxC = kmax = -1;
 
 	while (getline(file,str)) {
-        str.erase(remove_if(str, ::isspace), str.end());
+        str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
 
         if (regex_match(str.c_str(),what,regex("^A\\[([^,]+),(\\d+)\\]:(.*)$"))) {
             sing_t singularity;
@@ -101,7 +99,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
             singularity.point = FermatExpression(fermat,string(what[1].first,what[1].second));
             singularity.rank = atoi(string(what[2].first,what[2].second).c_str());
             mstr = string(what[3].first,what[3].second);
-            
+          
             FermatArray array(fermat,mstr);
             r = array.rows();
             if (end<0) end=r;
