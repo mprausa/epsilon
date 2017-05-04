@@ -89,7 +89,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
     kmaxC = kmax = -1;
 
 	while (getline(file,str)) {
-        str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
+        str.erase(remove_if(str.begin(),str.end(),::isspace),str.end());
         if (str == "") continue;
 
         size_t colon = str.find(':');

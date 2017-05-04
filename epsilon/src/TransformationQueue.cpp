@@ -84,7 +84,7 @@ void TransformationQueue::load(string _filename) {
     while (getline(file,str)) {
         transformation_t trans;
 
-        str.erase(remove_if(str.begin(),str.end(),[](char c){return isspace(c);}),str.end());
+        str.erase(remove_if(str.begin(),str.end(),::isspace),str.end());
         if (str == "") continue;
 
         size_t colon = str.find(':');
