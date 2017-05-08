@@ -4,10 +4,8 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 11)
 
 find_package(libFermat REQUIRED)
-find_path(PSTREAMS_INCLUDE_DIR pstream.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${PSTREAMS_INCLUDE_DIR})
 include_directories(${LIBFERMAT_INCLUDE_DIR})
 include_directories(${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
