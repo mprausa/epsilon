@@ -3,7 +3,7 @@
 /*
  *  include/Dyson.h
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #ifndef __DYSON_H
 #define __DYSON_H
 
-#include <boost/multi_array.hpp>
 #include <System.h>
 #include <unordered_map>
 
@@ -92,7 +91,10 @@ class Dyson {
                 std::string str(pltype_t type, format_t format);
         };
        
-        class ExMatrix : public boost::multi_array<Expression,2> {
+        class ExMatrix {
+            protected:
+                int dim;
+                std::vector<Expression> data;
             public:
                 ExMatrix(int dim);
                 virtual ~ExMatrix();
@@ -101,6 +103,9 @@ class Dyson {
                 ExMatrix integrate(const FermatExpression &xj);
 
                 ExMatrix lmul(const FermatArray &left) const;
+
+                Expression &operator() (int r, int c);
+                const Expression &operator() (int r, int c) const;
 
                 std::string str(pltype_t type);
         };
