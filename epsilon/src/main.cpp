@@ -26,10 +26,8 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <boost/regex.hpp>
-#include <boost/algorithm/string.hpp>
+#include <algorithm>
 using namespace std;
-using namespace boost;
 
 #include "functions_fer.h"
 
@@ -70,6 +68,23 @@ typedef struct {
     Dyson::format_t format;
 } Job;
 
+// trim from start
+static inline string &ltrim(string &s) {
+    s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
+    return s;
+}
+
+// trim from end
+static inline string &rtrim(string &s) {
+    s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
+    return s;
+}
+
+// trim from both ends
+static inline string &trim(string &s) {
+    return ltrim(rtrim(s));
+}
+
 static void executeFermat(Fermat *fermat, const string &filename) {
     ifstream file(filename);
 
@@ -106,7 +121,7 @@ static void sourceFermatFunctions(Fermat *fermat) {
     }
 
     for (auto line : _functions_fer) {
-        trim_right(line);
+        rtrim(line);
         if (line == "") continue;
 
         if (!first) file << endl;
@@ -297,8 +312,17 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
 
 static vector<string> parseSymbols(const string &str) {
     vector<string> symbols;
+    string sym="";
 
-    split(symbols,str,is_any_of(","));
+    for (auto &c : str) {
+        if (c == ',') {
+            symbols.push_back(sym);
+            sym = "";
+        } else {
+            sym += c;
+        }
+    }
+    symbols.push_back(sym);
 
     return symbols;
 }

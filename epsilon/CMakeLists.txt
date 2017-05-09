@@ -1,17 +1,11 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.0)
 project(epsilon)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 11)
 
-set(Boost_REALPATH ON)
-
-find_package(Boost 1.59.0 REQUIRED regex)
 find_package(libFermat REQUIRED)
-find_path(PSTREAMS_INCLUDE_DIR pstream.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${Boost_INCLUDE_DIR})
-include_directories(${PSTREAMS_INCLUDE_DIR})
 include_directories(${LIBFERMAT_INCLUDE_DIR})
 include_directories(${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
@@ -28,7 +22,7 @@ add_custom_target(functions_fer DEPENDS ${FUNCTIONS_FER})
 
 add_executable(epsilon ${SOURCES})
 add_dependencies(epsilon functions_fer)
-target_link_libraries(epsilon ${Boost_LIBRARIES} ${LIBFERMAT_LIBRARIES})
+target_link_libraries(epsilon ${LIBFERMAT_LIBRARIES})
 
 install (TARGETS epsilon DESTINATION bin)
 

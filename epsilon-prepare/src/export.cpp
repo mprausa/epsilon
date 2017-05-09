@@ -3,7 +3,7 @@
 /*
  *  src/export.cpp
  * 
- *  Copyright (C) 2016 Mario Prausa 
+ *  Copyright (C) 2016, 2017 Mario Prausa 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,19 +19,26 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/regex.hpp>
 #include <export.h>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <regex>
 using namespace std;
-using namespace boost;
 using namespace GiNaC;
 
 static string convert(const ex &e) {
     stringstream strm;
     strm << e;
-    return regex_replace(strm.str(),regex("(\\[)|(\\])|(I)|(sqrt\\((\\d+)\\))|(sqrt\\(-(\\d+)\\))"),"(?1{)(?2})(?3i)(?4sqrt$5)(?6isqrt$7)",format_all);
+    string s = strm.str();
+
+    s = regex_replace(s,regex("\\["),"{");
+    s = regex_replace(s,regex("\\]"),"}");
+    s = regex_replace(s,regex("I"),"i");
+    s = regex_replace(s,regex("sqrt\\((\\d+)\\)"),"sqrt$1");
+    s = regex_replace(s,regex("sqrt\\(-(\\d+)\\)"),"isqrt$1");
+
+    return s;
 }    
 
 void exprt(map<apart_sing,matrix> &A, map<int,matrix> &B) {
