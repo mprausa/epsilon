@@ -212,7 +212,7 @@ static void polydiv(const ex &a, const ex &b, const ex &x, ex &q, ex &r) {
         rdeg = r.degree(x);
     }
 
-    q = dynallocate<add>(v);
+    q = add(v);
 }
 
 ex modout(ex expr) {
