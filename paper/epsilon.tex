@@ -42,7 +42,7 @@
 
 \DeclareMathOperator{\rank}{rank}
 
-\newcommand{\uoption}[2]{{\makebox[16em][l]{\texttt{#1}:}\parbox[t]{\dimexpr\linewidth-16em\relax}{#2}}\vspace{1ex}}
+\newcommand{\uoption}[2]{{\makebox[18em][l]{\texttt{#1}:}\parbox[t]{\dimexpr\linewidth-18em\relax}{#2}}\vspace{1ex}}
 
 \title{\vskip-3cm{\baselineskip14pt
   \begin{flushleft}
@@ -57,7 +57,7 @@
   \\[1em]
   {\small \it Institute for Theoretical Particle Physics and Cosmology}\\
   {\small \it RWTH Aachen University}\\
-  {\small \it 52066 Aachen, Germany}\\[.5em]
+  {\small \it 52056 Aachen, Germany}\\[.5em]
   {\small \tt prausa@physik.rwth-aachen.de}
 }  
 
@@ -66,14 +66,35 @@
 \begin{document}
   \maketitle
   \begin{abstract}
-    In 2013, Henn proposed a special basis for a certain class of master integrals, which are expressible in terms of iterated integrals~\cite{Henn:2013pwa}.
+    In 2013, Henn proposed a special basis for a certain class of master integrals, which are expressible in terms of iterated integrals.
     In this basis, the master integrals obey a differential equation, where the right hand side is proportional to $\epsilon$ in $d=4-2\epsilon$ space-time dimensions.
-    An algorithmic approach to find such a basis was found by Lee~\cite{Lee:2014ioa}.
+    An algorithmic approach to find such a basis was found by Lee.
     We present the tool \texttt{epsilon}, an efficient implementation of Lee's algorithm based on the \texttt{Fermat} computer algebra system as computational backend.
   \end{abstract}
 
+  {\em Keywords:} Feynman integral; canonical basis; differential equation; Fuchsian form 
+
+  \subsection*{Program Summary}
+		\begin{small}
+			{\em Program Title:} epsilon \\
+			{\em Licensing provisions:} GPLv3 \\
+			{\em Programming language:} C++ \\
+			{\em Nature of problem:} 
+        For a certain class of master integrals, a canonical basis can be found in which they fulfill a differential equation with the right hand side proportional to $\epsilon$.
+        In such a basis the solution of the master integrals in an $\epsilon$-expansion becomes trivial.
+				Unfortunately, the problem of finding a canonical basis is challenging.
+				\\
+			{\em Solution method:} Algorithm by Lee~[1] \\
+			{\em Restrictions:} 
+				The normalization step of Lee's algorithm will fail if the eigenvalues of the matrix residues are not of the form $a+b\epsilon$ with $a,b \in\mathds{Z}$.
+				Multi-scale problems are not supported.
+        \\[8pt]
+        \;[1] R. N. Lee, JHEP 1504 (2015) 108 [arXiv:1411.0911 [hep-ph]].
+		\end{small}
+
+
   \section{Introduction}
-    The perturbative treatment of quantum field theories leads quite naturally to the problem of evaluating a large number of multiloop Feynman diagrams.
+    The perturbative treatment of quantum field theories leads quite naturally to the problem of evaluating a large number of multi-loop Feynman diagrams.
     After a tensor reduction the Feynman diagrams can be expressed in an even larger number of scalar Feynman integrals of the form
     \begin{equation} \label{eq:int}
       \int d^dl_1 \dots \int d^dl_L \frac1{D_1^{n_1} \dots D_N^{n_N}}\,,
@@ -82,7 +103,7 @@
     The denominators $D_i$ in \eqref{eq:int} are usually of the form $p^2 - m^2$, where $p$ is a linear combination of loop momenta and external momenta and $m$ some mass.
 
     A standard technique nowadays is the usage of integration-by-parts identities \cite{Tkachov:1981wb,Chetyrkin:1981qh} for the reduction of this large number of Feynman integrals to a rather small set of so-called master integrals.
-    These identities provide linear dependencies between various Feynman integrals, where the coefficients are rational functions in both the space-time dimension $d$ and the kinematic variables of the problem.
+    These identities provide linear dependences between various Feynman integrals, where the coefficients are rational functions in both the space-time dimension $d$ and the kinematic variables of the problem.
 
     Many methods were developed to solve these master integrals.
     For an overview see e.g. \cite{Smirnov:2012gma}.
@@ -92,14 +113,14 @@
     If the boundary conditions are known, the solution of the system of differential equations in an $\epsilon$-series becomes trivial.
 
     Two years ago, Lee proposed an algorithm to automate finding a canonical basis~\cite{Lee:2014ioa}.
-    A first implementation for this algorithm was presented in \cite{Gituliar:2016vfa}.
+    A first implementation for this algorithm was presented in \cite{Gituliar:2017vzm}.
 
     In this paper we present \texttt{epsilon}, a further implementation of Lee's algorithm based on the \texttt{Fermat}\cite{Lewis:fermat} computer algebra system.
     Our implementation utilizes the explicit dependence of the transformations used by Lee's algorithm on the kinematic variable to reduce the number of variables in intermediate steps.
     Another advantage of our implementation is the support of systems with singularities at complex points using \texttt{Fermat}'s polymod capability.
 
     In Section~\ref{sect:impl} we introduce some definitions and explain implementation details.
-    In Section~\ref{sect:usage} the installation procedure and the usage of \texttt{epsilon} and the associated tool \texttt{epsilon-prepare} is described.
+    In Section~\ref{sect:usage} the installation procedure and the usage of \texttt{epsilon} is described.
     In Section~\ref{sect:example} we give a non-trivial example of the usage based on a real three-loop computation.
   \section{Implementation details} \label{sect:impl}
     \subsection{Definitions}
@@ -125,11 +146,11 @@
       where $S$ is the set of all finite singularities and $\M^{(x_j)}_k$ and $\M_k(\epsilon)$ are independent of $x$.
       In particular, singularities $x_j$ depending on $\epsilon$ are forbidden.
       In many physically relevant cases one can use a trial and error approach to find a basis of master integrals $\vec{f}$ fulfilling the restriction \eqref{eq:M}.
-      The main strategy of our implementation is to keep the system always in the form of \eqref{eq:M} since here the $x$-dependence is explicite.
+      The main strategy of our implementation is to keep the system always in the form of \eqref{eq:M} since here the $x$-dependence is explicit.
 
       A singularity $x_j<\infty$ has Poincar\'{e} rank $p$ if $\M^{(x_j)}_p \neq 0$ and $\M^{(x_j)}_k = 0$ for $k>p$.
       In addition to the finite singularities, the system might also have a singularity at $\infty$.
-      The Poincar\'{e} rank $p$ of a singularity at $\infty$ is defined as the Poincar\'{e} rank of the singularty at $y=0$ of the system $\M(1/y,\epsilon)/y^2$.
+      The Poincar\'{e} rank $p$ of a singularity at $\infty$ is defined as the Poincar\'{e} rank of the singularity at $y=0$ of the system $\M(1/y,\epsilon)/y^2$.
       So \eqref{eq:M} has Poincar\'{e} rank $p>0$ at $\infty$ if $\M_{p-1} \neq 0$ and $\M_k = 0$ for $k\geq p$, and Poincar\'{e} rank $p=0$ at $\infty$ if all $\M_k = 0$ and $\sum_{x_j\in S} \M^{(x_j)}_0 \neq 0$.
       If all $\M_k = 0$ and $\sum_{x_j\in S} \M^{(x_j)}_0 = 0$, the system is not singular at $\infty$.
 
@@ -188,6 +209,7 @@
       The block $\C$ is called the active block as we apply Lee's algorithm to this block.
       As $\A$ to $\F$ are matrices as well, the definition of what we call the active block is more or less arbitrary as long as a block-triangular structure is obtained.
       But from a computational point of view a small dimension of the active block is preferable since this reduces the complexity of the resulting operations.
+      In the following, the matrices $\A^{(x_j)}_k, \dots, \F^{(x_j)}_k$ and $\A_k,\dots,\F_k$ will be referred to as coefficient matrices.
     \subsection{Utilizing the explicit $x$-dependence}
       Lee's algorithm uses three types of transformations: balances, off-diagonal reductions and $x$-independent transformations.
 
@@ -200,9 +222,9 @@
         \end{align}
       \end{subequations}        
       where $\P$ is a projector to be specified below, depending only on $\epsilon$, $\Pbar = \id - \P$ and $x_1,x_2 < \infty$.
-			In Lee's algorithm balances are applied to the active block $\C$ in order to reduce the generalized Poincar\'{e} rank of singular points and to normalize eigenvalues of fuchsian singularities.
+      In Lee's algorithm balances are applied to the active block $\C$ in order to reduce the generalized Poincar\'{e} rank of singular points and to normalize eigenvalues of Fuchsian singularities.
       
-      Off-diagonal reductions are used to reduce the block $\B$ to fuchsian form after the blocks $\A$ and $\C$ were already fuchsian.
+      Off-diagonal reductions are used to reduce the block $\B$ to Fuchsian form after the blocks $\A$ and $\C$ were already reduced to $\epsilon$-form.
       They are defined by
       \begin{subequations} \label{eq:offred}
         \begin{align}
@@ -415,19 +437,19 @@
 
       All transformations in terms of the coefficient matrices are listed in appendix \ref{sect:app_bal}.
     \subsection{Overview of Lee's algorithm} \label{sect:lee}
-      Lee's algorithm\cite{Lee:2014ioa} transforms an ordinary system of differential equations into an $\epsilon$-form \eqref{eq:epform} in three basic steps that are applied to the active block:
+      Three basic steps allow Lee's algorithm\cite{Lee:2014ioa} to transform an ordinary system of differential equations into an $\epsilon$-form \eqref{eq:epform} if they are applied to the whole system:
       \begin{enumerate}
-        \item the transformation of a system into fuchsian form,
-        \item the normalization of the eigenvectors of all matrix residues,
-        \item and the factorization of $\epsilon$.
-      \end{enumerate}        
-      In order to make use of the block-triangular structure of the system \eqref{eq:triangular} we add a fourth step in which we transform the off-diagonal block $\B$ into fuchsian form.
+        \item transformation of a system into Fuchsian form,
+        \item normalization of the eigenvectors of all matrix residues,
+        \item factorization of $\epsilon$.
+      \end{enumerate}
+      In order to make use of the block-triangular structure of the system \eqref{eq:triangular} these three steps are applied only to the active block followed by a fourth step to transform the off-diagonal block $\B$ into Fuchsian form.
 
-      In this subsection we briefly discuss all four steps.
+      In this sub-section we briefly discuss all four steps.
       More details can be found in the original paper by Lee\cite{Lee:2014ioa}.
 
       \subsubsection*{Fuchsification}
-        The basic building blocks for the first part of Lee's algorithm, the transformation of the system to fuchsian form, are the balances defined in \eqref{eq:bal}.
+        The basic building blocks for the first part of Lee's algorithm, the transformation of the system to Fuchsian form, are the balances defined in \eqref{eq:bal}.
         With the right choice of a projector $\P$, it is possible to perform a so-called Moser reduction to strictly lower the generalized Poincar\'{e} rank of the singularity at $x_1$~\cite{Moser:1959}.
         In this discussion we restrict ourselves to the case where $x_1<\infty$.
         A more general treatment is given in\cite{Lee:2014ioa}.
@@ -435,7 +457,7 @@
         Let $p$ be the Poincar\'{e} rank of the singularity at $x_1$ of the active block $\C$ and $\{u_k^{\alpha}\}$ with $\alpha = 0,\dots,n_k$ be the set of $n_k+1$ right generalized eigenvectors of $\C_p^{(x_1)}$ belonging to a Jordan block $k$ in the Jordan decomposition of $\C_p^{(x_1)}$.
         The Jordan blocks are ordered by their size so that $n_i \geq n_{i+1}$.
         If $p>0$, we assume all eigenvalues of $\C_p^{(x_1)}$ to be zero, or else no transformation to lower the generalized Poincar\'{e} rank exists.
-        The right generalized eigenvectors fulfil
+        The right generalized eigenvectors fulfill
         \[
           \C_p^{(x_1)} u_k^{(0)} = 0\,, \quad
           \C_p^{(x_1)} u_k^{(\alpha+1)} = u_k^{(\alpha)}\,.
@@ -461,7 +483,7 @@
             \right)^{-1}
           \right]^\dagger\,,
         \end{equation}
-        and fulfil
+        and fulfill
         \[
           v_k^{(0)\dagger} \C_p^{(x_1)} = 0\,, \quad
           v_k^{(\alpha+1)\dagger} \C_p^{(x_1)} = v_k^{(\alpha)\dagger}\,.
@@ -545,14 +567,14 @@
         
 				In Lee's algorithm the above steps are used to decrease the Poincar\'{e} rank of a singularity $x_1$ as long as it is possible to find a projector \eqref{eq:Q_fuchs} with $w_k^\dagger$ spanning a left-invariant space of some $\C^{(x_2)}_q$, where $x_2 \neq x_1$ is some other singular point.
         If no such projector exists, a regular point $y$ is chosen and the projector $\Q_1$ defined by \eqref{eq:Q1_fuchs} is used in the balance.
-        This of course creates a new (apparent) fuchsian singularity at $y$.
+        This of course creates a new (apparent) Fuchsian singularity at $y$.
         This way it is possible to reduce the system to an equivalent one with all singularities having Poincar\'{e} rank zero.
         Fortunately, the next step, the normalization of the eigenvalues, removes all apparent singularities introduced in this step.
       \subsubsection*{Normalization}
 				The second step of Lee's algorithm is the normalization of the eigenvalues of the matrix residues.
-				Again, the main incredients are the balances defined in \eqref{eq:bal}.
-        We assume all singularities to be fuchsian now and the eigenvalues of the matrix residues to be of the form $a+b\epsilon$ with $a\in\mathds{Z}$.
-				This is a necassary condition for the existence of a transformation normalizing all eigenvalues.
+        Again, the main ingredients are the balances defined in \eqref{eq:bal}.
+        We assume all singularities to be Fuchsian now and the eigenvalues of the matrix residues to be of the form $a+b\epsilon$ with $a\in\mathds{Z}$.
+        This is a necessary condition for the existence of a transformation normalizing all eigenvalues.
 				If this condition cannot be fulfilled a redefinition of the kinematic variable might be helpful.
         A normalized eigenvalue is an eigenvalue proportional to $\epsilon$ (i.e. with $a=0$).
         The matrix residue at $\infty$ is equal to $-\sum_{x_j\in S} \C^{(x_j)}_0$.
@@ -669,7 +691,7 @@
         \end{equation}
         with a left eigenvector $v_k^{(0)\dagger}$ of $\C^{(x_2)}_0$ and $v_k^{(0)\dagger} w = 1$ shifts one eigenvalue $\lambda_k$ of $\C^{(x_2)}_0$ down by one.
         
-        A balance with a projector \eqref{eq:Qnorm} could spoil the fuchsian form of the system if it increases the Poincar\'{e} rank at any singularity.
+        A balance with a projector \eqref{eq:Qnorm} could spoil the Fuchsian form of the system if it increases the Poincar\'{e} rank at any singularity.
         This is in principle possible at $x_2$.
         Evaluating \eqref{eq:bal_x1_x2_Cx2k} at $k=1$ leads to
         \[
@@ -678,13 +700,13 @@
           \Q \C^{(x_2)}_0 \Qbar\,.
         \]
         This vanishes if $w^\dagger$ is a left eigenvector of $\C^{(x_2)}_0$.
-        In that case not only the fuchsian form of the system is preserved but we also arrive at a projector of the form \eqref{eq:Qpnorm}.
+        In that case not only the Fuchsian form of the system is preserved but we also arrive at a projector of the form \eqref{eq:Qpnorm}.
 				So the projector of choice is 	
         \begin{equation} \label{eq:Qnorm1}
           \Q = u^{(0)}_k v^{(0)\dagger}_l\,,
         \end{equation}
 				where $u^{(0)}_k$ is a right eigenvector of $\C^{(x_1)}_0$, $v^{(0)\dagger}_l$ is a left eigenvector of $\C^{(x_2)}_0$ and $v^{(0)\dagger}_l u^{(0)}_k = 1$.
-				This projector, used in balance \eqref{eq:bal_x1_x2}, increases one eigenvalue $\lambda_k$ of $\C^{(x_1)}_0$ by one and decreases one eigenvalue $\mu_l$ of $\C^{(x_2)}_0$ by one while conserving the fuchsian form of the system.
+				This projector, used in balance \eqref{eq:bal_x1_x2}, increases one eigenvalue $\lambda_k$ of $\C^{(x_1)}_0$ by one and decreases one eigenvalue $\mu_l$ of $\C^{(x_2)}_0$ by one while conserving the Fuchsian form of the system.
 
  			  In order to utilize the considerations above in an algorithmic approach, one first selects a singularity $x_0$ as `fallback'.
         Then balances with projectors of the form \eqref{eq:Qnorm1} are used to `mutually balance' eigenvalues between two singularities. 
@@ -706,7 +728,7 @@
           \T^{-1}(\mu) \frac{\M^{(x_j)}_0(\mu)}\mu \T(\mu)
         \]
         holds for all $x_j \in S$.
-        Multiplying this equation from the left by $\T(\epsilon)$ and form the right by $\T^{-1}(\mu)$, leads to
+        Multiplying this equation from the left by $\T(\epsilon)$ and from the right by $\T^{-1}(\mu)$, leads to
         \begin{equation} \label{eq:epfact}
           \frac{\M^{(x_j)}_0(\epsilon)}\epsilon \T(\epsilon,\mu)
           =
@@ -718,11 +740,11 @@
 
       \subsubsection*{Fuchsification of off-diagonal blocks}
 				Since the definition of the active block is somewhat arbitrary, we should in principle be able to transform all diagonal blocks to $\epsilon$-form by redefining the active block and applying the three steps described above.
-				However, we still need to reduce the off-diagonal block $\B$ to fuchsian form.
-        Again we will restrict the discussion to finite singularities $x_1<\infty$ and assume the block $\A$ and $\C$ to be fuchsian.
+				However, we still need to reduce the off-diagonal block $\B$ to Fuchsian form.
+        Again we will restrict the discussion to finite singularities $x_1<\infty$ and assume the block $\A$ and $\C$ to be already in $\epsilon$-form.
        
         Let $p$ be the Poincar\'{e} rank of the off-diagonal block $\B$ at the singularity $x_1$, i.e. $\B^{(x_1)}_p \neq 0$ and $\B^{(x_1)}_k = 0$ for $k>p$.
-        The behaviour of $\B^{(x_1)}_p$ under a transformation \eqref{eq:offred1} with $k=p$ is given by \eqref{eq:offred_Bx1k}:
+        The behavior of $\B^{(x_1)}_p$ under a transformation \eqref{eq:offred1} with $k=p$ is given by \eqref{eq:offred_Bx1k}:
         \[
           \widetilde\B^{(x_1)}_p = 
             \B^{(x_1)}_p
@@ -732,65 +754,63 @@
         In order to decrease the Poincar\'{e} rank, $\widehat\G$ has to be determined such that $\widetilde\B^{(x_1)}_p$ vanishes.
         This linear system of equations can be solved e.g. with Gaussian elimination.
        
-        Hence, with transformations of the form \eqref{eq:offred} it is possible to reduce all singularities of the off-diagonal block $\B$ to fuchsian form.
+        Hence, with transformations of the form \eqref{eq:offred} it is possible to reduce all singularities of the off-diagonal block $\B$ to Fuchsian form.
+  \newpage        
   \section{Usage} \label{sect:usage}
     \subsection{Installation guide on Linux systems}
-      Make sure the dependencies 
+      Ensure that the dependencies 
       \begin{itemize}
-        \item \texttt{Fermat} ($\geq$ 5.3)\footnote{
-            There is a bug in all versions of \texttt{Fermat} $\leq$ 5.25 concerning polymods. 
-            If you are planning to use this feature (see \ref{sect:usage_field}) there is a beta version available with this bug fixed.
-          } \cite{Lewis:fermat},
-        \item \texttt{Boost} ($\geq$ 1.59.0) \cite{boost},
-        \item \texttt{PStreams} ($\geq$ 1.0.0) \cite{pstreams},
-        \item \texttt{GiNaC} ($\geq$ 1.7.1) \cite{Bauer:2000cp} (for \texttt{epsilon-prepare} only)
+        \item \texttt{Fermat} ($\geq$ 6.0) \cite{Lewis:fermat},
+        \item \texttt{GiNaC} ($\geq$ 1.6.2) \cite{Bauer:2000cp} (for \texttt{epsilon-prepare} only)
       \end{itemize}
       are installed.
+
       As a next step, \texttt{libFermat} has to be installed.
       \texttt{libFermat}, which was developed in connection with \texttt{epsilon}, is a \texttt{C++} library designed to communicate with \texttt{Fermat}.
       Nevertheless, we decided to publish \texttt{libFermat} in a separate repository since it might be useful elsewhere.
-      The source code of \texttt{libFermat} can be obtained via \texttt{github} using
+      Internally, the communication is done with \texttt{PStreams}\cite{pstreams} which is included in the package.
+      The source code of the most recent version of \texttt{libFermat} can be obtained via \texttt{github} using
       \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
         git clone https://github.com/mprausa/libFermat.git
       \end{lstlisting}
       This will create a directory \texttt{libFermat/} and clone the library into that location.
       Now inside this directory, run
       \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
-        cmake .
-      \end{lstlisting}
-      If all the dependencies are satisfied a file \texttt{Makefile} will be created.
-      The \texttt{cmake} command might require some additional options depending on your system and the locations of the dependencies.
-      Now the library \texttt{libFermat} can be compiled and installed using first
-      \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
+        cmake -DCMAKE_INSTALL_PREFIX=/path/to/install .
         make
-      \end{lstlisting}
-      and then
-      \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
         make install
       \end{lstlisting}
-      Depending on your installation destination, the second command might require \texttt{root} access.
-      The installation prefix can be changed with the \texttt{cmake} option 
-      \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
-        -DCMAKE_INSTALL_PREFIX=directory
-      \end{lstlisting}
+      where \texttt{/path/to/install} is your desired installation directory and defaults to \texttt{/usr/local} on a typical Linux system.
+      The library is installed into the sub-directory \texttt{lib} and the header files into the sub-directory \texttt{include} of \texttt{/path/to/install}.
+      If your choice is a global directory you will require \texttt{root} access for the last step \texttt{make install}.
+      Remember to include the sub-directory \texttt{lib} of \texttt{/path/to/install} into the \texttt{LD\_LIBRARY\_PATH} environment variable if you are using a non-standard directory.
+      
       The next step is to install \texttt{epsilon} and \texttt{epsilon-prepare}.
       In principle the procedure is the same as for the installation of \texttt{libFermat}.
-      First, clone the sources with
+      First, obtain the most recent version of the source code with
       \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
         git clone https://github.com/mprausa/epsilon.git
       \end{lstlisting}
       then change into the newly created directory \texttt{epsilon/} and run
       \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
-        cmake .
+        cmake -DCMAKE_INSTALL_PREFIX=/path/to/install .
         make
         make install
       \end{lstlisting}
-      As before \texttt{cmake} might require additional options and \texttt{make install} might need \texttt{root} access.
+      It is recommended to use the same \texttt{/path/to/install} as for \texttt{libFermat}, else the \texttt{cmake} step might require additional options to find \texttt{libFermat}.
+      The programs \texttt{epsilon} and \texttt{epsilon-prepare} are installed into the sub-directory \texttt{bin} of the installation path.
+      As before, \texttt{make install} might need \texttt{root} access depending on the installation prefix.
+      For a non-standard installation prefix, the environment variable \texttt{PATH} should be adjusted to include the sub-directory \texttt{bin} of \texttt{/path/to/install} so that the programs \texttt{epsilon} and \texttt{epsilon-prepare} can be found by the shell.
+
       It is also possible to build \texttt{epsilon} and \texttt{epsilon-prepare} individually.
       This can be done by changing into the corresponding sub-directory and running \texttt{cmake} and \texttt{make} from within there.
 
-      The \texttt{epsilon}-repository also offers a \texttt{Mathematica} package \texttt{EpsilonTools.m}  found in the sub-directory \texttt{mma/}.
-      This sub-directory also provides an install script \texttt{install.sh} which should be able to install \texttt{EpsilonTools.m}.
+      The \texttt{epsilon}-repository also offers a \texttt{Mathematica} package \texttt{EpsilonTools.m} found in the sub-directory \texttt{mma/}.
+      Run
+      \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
+        ./install.sh
+      \end{lstlisting}
+      from within this sub-directory to install \texttt{EpsilonTools.m} into the \texttt{Applications/} directory of your Mathematica installation.
     \subsection{Input/Output format} \label{sect:format}
       \texttt{epsilon} uses its own file format to represent a system of differential equations of the form \eqref{eq:M}, where every line represents one coefficient matrix.
       A line starts with either `\texttt{A[$x_j$,$k$]:}' or `\texttt{B[$k$]:}' followed by a matrix.
@@ -809,9 +829,9 @@
       \end{lstlisting}
       is used to create a file \texttt{matrix.dat} in \texttt{epsilon} format.
       The matrix elements of the input matrix are expected to be rational functions in $\epsilon$ and $x$ (represented by the symbols \texttt{ep} and \texttt{x}, respectively).
-      The command \texttt{epsilon-prepare} preforms a partial fraction decomposition over complex numbers in the variable $x$ of the matrix elements and results in an expression of the form of \eqref{eq:M}.
+      The command \texttt{epsilon-prepare} performs a partial fraction decomposition over complex numbers in the variable $x$ of the matrix elements and results in an expression of the form of \eqref{eq:M}.
       
-      To perform partial fractioning of a rational function, the zeros of its denominator have to be determined.
+      To perform a partial fractioning of a rational function, the zeros of its denominator have to be determined.
       Therefore, \texttt{epsilon-prepare} applies \texttt{GiNaC}'s polynomial factorization algorithm to the denominator in order to factorize it into polynomials that are irreducible over the integers.
       In a second step, the zeros of all factors are found individually.
 
@@ -843,11 +863,11 @@
         epsilon [OPTIONS] JOBS...
       \end{lstlisting}
       The path to the \texttt{Fermat} binary can be set inside the environment variable \texttt{FERMAT}.
-      If this variable is not set explicitely, \texttt{epsilon} will look for a binary \texttt{fer64} inside the directories defined in the environment variable \texttt{PATH}.
+      If this variable is not set explicitly, \texttt{epsilon} will look for a binary \texttt{fer64} inside the directories defined in the environment variable \texttt{PATH}.
       Options are set once at the start of \texttt{epsilon}.
       Jobs are processed one by one in the same order they are defined on the command line.
       Some jobs will perform transformations to the system.
-      This transformations are stored in a so-called internal transformation queue in RAM and can also be written to an external file.
+      These transformations are stored in a so-called internal transformation queue in RAM and can also be written to an external file.
       \subsubsection*{Options:}
         \begin{itemize}
           \item
@@ -863,8 +883,8 @@
             \uoption{--symbols \textit{symbols}}{Adjoin additional symbols to \texttt{Fermat}.}
 
             This option adds the specified symbols to \texttt{Fermat}.
-            The symbols defined in this options are the very first variables adjoint to \texttt{Fermat} followed by the symbol \texttt{ep} and further internally used symbols.
-            \texttt{\textit{symbols}} have to be a comma-separated list.
+            The symbols defined in this option are the very first variables adjoint to \texttt{Fermat} followed by the symbol \texttt{ep} and further internally used symbols.
+            \texttt{\textit{symbols}} has to be a comma-separated list.
           \item
             \uoption{--echelon-fermat}{Use the \texttt{Redrowech} function in \texttt{Fermat} to solve linear systems.}
 
@@ -912,9 +932,9 @@
 
             This job activates the block $\{\texttt{\textit{start}},\texttt{\textit{end}}\}$.
           \item
-            \uoption{--fuchsify}{Transform active block into fuchsian form.}
+            \uoption{--fuchsify}{Transform active block into Fuchsian form.}
 
-            This job reduces the active block to fuchsian form \eqref{eq:fuchsian}.
+            This job reduces the active block to Fuchsian form \eqref{eq:fuchsian}.
             See section~\ref{sect:lee} for details.
           \item
             \uoption{--normalize}{Normalize eigenvalues.}
@@ -922,7 +942,7 @@
             This job normalizes the eigenvalues of all residue matrices making them proportional to $\epsilon$.
             See section~\ref{sect:lee} for details.
           \item
-            \uoption{--factorep}{Factor out $\epsilon$ (autodetect $\mu$).}
+            \uoption{--factorep}{Factor out $\epsilon$ (auto detect $\mu$).}
 
             This job transforms the active block into $\epsilon$-form \eqref{eq:epform} using the method described in section~\ref{sect:lee}.
             The variable $\mu$ in \eqref{eq:epfact} is left as an unknown and will be fixed only \emph{after} the system is solved to ensure that the transformation is invertible.
@@ -937,8 +957,26 @@
           \item
             \uoption{--left-fuchsify}{Fuchsify off-diagonal block.}
             
-          This job is used to transform the block left of the active block (block $\B$ in \eqref{eq:triangular}) to fuchsian form.
-          See section~\ref{sect:lee} for details.
+            This job is used to transform the block left of the active block (block $\B$ in \eqref{eq:triangular}) to Fuchsian form.
+            See section~\ref{sect:lee} for details.
+          \item
+            \uoption{--dyson \textit{file} \textit{order} \textit{type} \textit{format}}{Generate Dyson operator.}
+
+            This job writes a Dyson operator $U(x,x_0)$ for the active block up to order \texttt{\textit{order}} in $\epsilon$ to \texttt{\textit{file}}.
+            The active block has to be in $\epsilon$-form.
+            The Dyson operator fulfills
+            \[
+              \frac{\partial}{\partial x}
+              U(x,x_0)
+              =
+              \epsilon \sum\limits_{x_j \in S} 
+              \frac{\widehat\C^{(x_j)}_0}{x-x_j}
+              U(x,x_0)
+              \,, \quad
+              U(x_0,x_0) = \id\,.
+            \]
+            The option \texttt{\textit{type}} specifies the type of multiple polylogarithms in the output and can be set to \texttt{GPL}, \texttt{HPL} or \texttt{HPLalt} for Goncharov polylogarithms\cite{Goncharov:2010jf} or harmonic polylogarithms in the ``a''- or ``m''-notation\cite{Remiddi:1999ew,Maitre:2005uu}, respectively.
+            \texttt{\textit{format}} should be \texttt{mma} or \texttt{form} to specify \texttt{Mathematica} or \texttt{FORM}\cite{Vermaseren:2000nd} as output format.
         \end{itemize}
     \subsection{Using field extensions} \label{sect:usage_field}
         The \texttt{Fermat} computer algebra system works with multivariate polynomials over the ground ring $\mathds{Z}$ and the corresponding quotient field, the rational functions over $\mathds{Z}$.
@@ -960,49 +998,91 @@
         Therefore, in complicated cases with more than one complex number, it is useful to set a polymod only for the most frequent variable appearing in the block to work with next.
         As the order of symbols once set cannot be changed inside \texttt{Fermat}, the only way to change the `active' polymod is by saving the system with \texttt{--write} and reload it into a new session after the symbols are adjoined in a different order.
         In our tests we were able to solve huge systems with up to three complex numbers applying this strategy.
+    \subsection{Usage of \texttt{EpsilonTools.m}}
+      The Mathematica package \texttt{EpsilonTools.m} provides functions which help to set up \texttt{epsilon} and to work with the \texttt{epsilon} input/output file format (see section~\ref{sect:format}).
+      It is not essential in order to run \texttt{epsilon}.
+      After a successful installation, the package can be loaded into a Mathematica session with
+      \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
+        <<EpsilonTools`
+      \end{lstlisting}
+      \texttt{EpsilonTools.m} provides three functions:
+      \begin{itemize}
+        \item
+          \texttt{EpsilonSymRules[\textit{expression}]}
 
+          This function scans \texttt{\textit{expression}} for symbols of the form given in table~\ref{tbl:prep_syms} and compiles a list of rules for these symbols to their corresponding Mathematica expressions, e.g.
+          \begin{lstlisting}[basicstyle=\ttfamily,xleftmargin=-4em]
+            {r3->(1+I*Sqrt[3])/2, q5->(1+Sqrt[5])/2, i->I}
+          \end{lstlisting}          
+        \item
+          \texttt{EpsilonRead[\textit{file}]}
+    
+          This function reads \texttt{\textit{file}} into Mathematica where \texttt{\textit{file}} is in the format described in section~\ref{sect:format}.
+          
+          Options:
+          \begin{itemize}
+            \item 
+              \texttt{ReplaceSymbols} (default: \texttt{True})
+
+              If this option is set to \texttt{True}, all symbols introduced by \texttt{epsilon-prepare} will be replaced by their corresponding Mathematica expression.
+            \item
+              \texttt{CheckFuchsian} (default: \texttt{False})
+
+              If this option is set to \texttt{True}, the function returns \texttt{\$Failed} if the system in \texttt{\textit{file}} is not in Fuchsian form.
+            \item
+              \texttt{CheckEpsilon} (default: \texttt{False})
+              
+              If this option is set to \texttt{True}, the function returns \texttt{\$Failed} if the system in \texttt{\textit{file}} is not in $\epsilon$-form.
+          \end{itemize}
+        \item
+          \texttt{EpsilonBlocks[\textit{M}]}
+
+          This function scans for a block-triangular structure of the matrix \texttt{\textit{M}} and returns a list of the boundaries of all diagonal blocks.
+          The returned boundaries are in the form \texttt{\{\textit{start},\textit{end}\}}.
+          The values \texttt{\textit{start}} and \texttt{\textit{end}} can be used in the \texttt{--block} job of \texttt{epsilon}.
+      \end{itemize}
   \section{A physical example} \label{sect:example}
     \begin{figure}
       \centering
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I1}
+        \includegraphics[scale=1.5]{figs/I1}
         \caption*{$I_1$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I2}
+        \includegraphics[scale=1.5]{figs/I2}
         \caption*{$I_2$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I4}
+        \includegraphics[scale=1.5]{figs/I4}
         \caption*{$I_4$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I5}
+        \includegraphics[scale=1.5]{figs/I5}
         \caption*{$I_5$}
       \end{subfigure} \\
       %
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I6}
+        \includegraphics[scale=1.5]{figs/I6}
         \caption*{$I_6$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I7}
+        \includegraphics[scale=1.5]{figs/I7}
         \caption*{$I_7$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I8}
+        \includegraphics[scale=1.5]{figs/I8}
         \caption*{$I_8$}
       \end{subfigure}%
       \begin{subfigure}[b]{.24\textwidth}
         \centering
-        \includegraphics[scale=1.5]{feynman/I9}
+        \includegraphics[scale=1.5]{figs/I9}
         \caption*{$I_9$}
       \end{subfigure}
       \caption{ \label{fig:example}
@@ -1137,7 +1217,7 @@
         --factorep-at -1 \
         --write epsilon.dat --export transformation.m
     \end{lstlisting}
-    The \texttt{--load} option in the first line loads the file \texttt{matrix.dat} with an active block $\{1,1\}$; the \texttt{--block} options are used to change the active block.
+    The \texttt{--load} job in the first line loads the file \texttt{matrix.dat} with an active block $\{1,1\}$; the \texttt{--block} jobs are used to change the active block.
     In all blocks except for block $\{5,9\}$ we factor out $\epsilon$ at $\mu=-1$.
     For this block $\mu=-1$ would lead to a singular system so we choose $\mu=1$ instead.
     The final system is written into the file \texttt{epsilon.dat} and the corresponding transformation matrix into \texttt{transformation.m}.
@@ -1207,15 +1287,15 @@
       
   \section{Summary}
     In this paper we presented \texttt{epsilon}.
-    The tool \texttt{epsilon} is an efficient implementation of an algorithm proposed by R.N.~Lee to reduce a system of ordinary differential equations with rational coefficients to a canonical form, where the right hand side is proportional $\epsilon$. 
+    The tool \texttt{epsilon} is an efficient implementation of an algorithm proposed by R.N.~Lee to reduce a system of ordinary differential equations with rational coefficients to a canonical form, where the right hand side is proportional to $\epsilon$. 
 
     In physically relevant situations, the small parameter $\epsilon$ usually is a regulator in dimensional regularization (e.g. in $d=4-2\epsilon$ dimensions).
     We showed its applicability in a three-loop example and demonstrated the possibility to reduce systems with complex singular points.
 
-  \section*{Acknowledgment}
-    This work was supported by BMBF contract 05H15PACC1.
-    This research was supported through computational resources by the RWTH Compute Cluster of RWTH Aachen University.
+  \section*{Acknowledgments}
     The author wants to thank Robert Harlander for useful discussions and comments on the manuscript.
+    This work was supported by BMBF contract 05H15PACC1.
+    The computing resources were granted by RWTH Aachen University under project rwth0119.
     The Feynman diagrams in this article have been drawn with \texttt{JaxoDraw}~\cite{Binosi:2008ig} based on \texttt{Axodraw}~\cite{Vermaseren:1994je}.
   \appendix
   \section{Transformations} \label{sect:app_bal}
@@ -1581,8 +1661,8 @@
           \E_{k-1} \Q\,. 
       \end{align*}
     \subsection{Fuchsification of off-diagonal blocks}
-      In this appendix we consider the transformation of the off-diagonal block $\B$ to fuchsian form.
-      We assume that the diagonal blocks $\A$ and $\C$ are already fuchsian.
+      In this appendix we consider the transformation of the off-diagonal block $\B$ to Fuchsian form.
+      We assume that the diagonal blocks $\A$ and $\C$ are already in $\epsilon$-form.
       The transformation needed has the form
       \begin{equation} \label{eq:lefttrans}
         \T = {\cal L}(x_1,k,\G)\,, \quad
