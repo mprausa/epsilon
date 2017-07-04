@@ -23,7 +23,6 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include <regex>
 #include <System.h>
 using namespace std;
 
@@ -71,7 +70,6 @@ string TransformationQueue::filename() {
 
 void TransformationQueue::load(string _filename) {
     ifstream file(_filename);
-    cmatch what;
 	string str;
     
     Fermat *fermat = infinity.fer();
@@ -95,18 +93,23 @@ void TransformationQueue::load(string _filename) {
         string str0(str,0,colon);
         str = str.erase(0,colon+1);
 
-        if (regex_match(str0.c_str(),what,regex("^B\\(([^,]+),([^,]+)\\)$"))) {
+        if (str0.substr(0,2) == "B[" && str0.back() == ']') {
+            size_t comma = str0.find(',');
+            if (comma == string::npos) {
+                throw invalid_argument("parse error");
+            }
+            
             trans.type = transformation_t::Balance;
             string xstr;
 
-            xstr = string(what[1].first,what[1].second);
+            xstr = str0.substr(2,comma-2);
             if (xstr == "inf") {
                 trans.x1 = infinity;
             } else {
                 trans.x1 = FermatExpression(fermat,xstr);
             }
-            
-            xstr = string(what[2].first,what[2].second);
+
+            xstr = str0.substr(comma+1,str0.size()-comma-2);
             if (xstr == "inf") {
                 trans.x2 = infinity;
             } else {
@@ -122,19 +125,22 @@ void TransformationQueue::load(string _filename) {
             trans.k = 0;
 
             trans.T = FermatArray(fermat,str);
-        } else if (regex_match(str0.c_str(),what,regex("^L\\(([^,]+),([^,]+)\\)$"))) {
-            trans.type = transformation_t::LeftTrans;
-            string xstr;
+        } else if (str0.substr(0,2) == "L[" && str0.back() == ']') {
+            size_t comma = str0.find(',');
+            if (comma == string::npos) {
+                throw invalid_argument("parse error");
+            }
 
-            xstr = string(what[1].first,what[1].second);
+            trans.type = transformation_t::LeftTrans;
+            string xstr(str0,2,comma-2);
+
             if (xstr == "inf") {
                 trans.x1 = infinity;
             } else {
                 trans.x1 = FermatExpression(fermat,xstr);
             }
             
-            xstr = string(what[2].first,what[2].second);
-            trans.k = atoi(xstr.c_str());
+            trans.k = stoi(str0.substr(comma+1,str0.size()-comma-2));
 
             trans.x2 = zero;
 

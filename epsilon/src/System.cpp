@@ -27,10 +27,10 @@
 #include <Echelon.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
-#include <regex>
 using namespace std;
 
 FermatExpression infinity;
@@ -75,7 +75,6 @@ System::System(Fermat *fermat, bool echfer) : tqueue(fermat) {
 
 System::System(Fermat *fermat, string filename, int start, int end, bool echfer) : tqueue(fermat) {
 	string str;
-    cmatch what;
 	ifstream file(filename);
     int r;
     
@@ -99,14 +98,19 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
 
         string str0(str,0,colon);
         str = str.erase(0,colon+1);
-        
-        if (regex_match(str0.c_str(),what,regex("^A\\[([^,]+),(\\d+)\\]$"))) {
+       
+        if (str0.substr(0,2) == "A[" && str0.back() == ']') {
+            size_t comma = str0.find(',');
+            if (comma == string::npos) {
+                throw invalid_argument("parse error");
+            }
+
             sing_t singularity;
             TriangleBlockMatrix mat;
 
-            singularity.point = FermatExpression(fermat,string(what[1].first,what[1].second));
-            singularity.rank = atoi(string(what[2].first,what[2].second).c_str());
-          
+            singularity.point = FermatExpression(fermat,str0.substr(2,comma-2));
+            singularity.rank = stoi(str0.substr(comma+1,str0.size()-comma-2));
+
             FermatArray array(fermat,str);
             r = array.rows();
             if (end<0) end=r;
@@ -141,12 +145,10 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
                     singularities[singularity.point].rank = singularity.rank;
                 }
             }
-        } else if (regex_match(str0.c_str(),what,regex("^B\\[(\\d+)\\]$"))) {
-            int k;
+        } else if (str0.substr(0,2) == "B[" && str0.back() == ']') {
+            int k = stoi(str0.substr(2,str0.size()-3));
             TriangleBlockMatrix mat;
             int r;
-
-            k = atoi(string(what[1].first,what[1].second).c_str());
             
             FermatArray array(fermat,str);
             r = array.rows();
