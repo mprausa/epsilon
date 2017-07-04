@@ -23,7 +23,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <regex>
 using namespace std;
 using namespace GiNaC;
 
@@ -31,14 +30,48 @@ static string convert(const ex &e) {
     stringstream strm;
     strm << e;
     string s = strm.str();
+    string s1;
 
-    s = regex_replace(s,regex("\\["),"{");
-    s = regex_replace(s,regex("\\]"),"}");
-    s = regex_replace(s,regex("I"),"i");
-    s = regex_replace(s,regex("sqrt\\((\\d+)\\)"),"sqrt$1");
-    s = regex_replace(s,regex("sqrt\\(-(\\d+)\\)"),"isqrt$1");
-
-    return s;
+    for (auto it=s.begin(); it != s.end(); ++it) {
+        switch(*it) {
+            case '[':
+                s1 += '{';
+                break;
+            case ']':
+                s1 += '}';
+                break;
+            case 'I':
+                s1 += 'i';
+                break;
+            case '(':
+                if (s1.size() >= 4 && s1.substr(s1.size()-4) == "sqrt") {
+                    s1.erase(s1.size()-4);
+                    ++it;
+                    bool imag = false;                       
+                    string num="";
+                    if (*it == '-') {
+                        imag = true;
+                        ++it;
+                    }
+                    for (;it != s.end() && *it != ')'; ++it) {
+                        if (!isdigit(*it)) {
+                            throw invalid_argument("parse error.");
+                        }                            
+                        num += *it;
+                    }
+                    if (*it != ')') {
+                        throw invalid_argument("parse error.");
+                    }
+                    s1 += (imag?"isqrt":"sqrt") + num;
+                } else {
+                    s1 += *it;
+                }
+                break;
+            default:
+                s1 += *it;
+        }
+    }        
+    return s1;
 }    
 
 void exprt(map<apart_sing,matrix> &A, map<int,matrix> &B) {
