@@ -93,7 +93,7 @@ void TransformationQueue::load(string _filename) {
         string str0(str,0,colon);
         str = str.erase(0,colon+1);
 
-        if (str0.substr(0,2) == "B[" && str0.back() == ']') {
+        if (str0.substr(0,2) == "B(" && str0.back() == ')') {
             size_t comma = str0.find(',');
             if (comma == string::npos) {
                 throw invalid_argument("parse error");
@@ -125,7 +125,7 @@ void TransformationQueue::load(string _filename) {
             trans.k = 0;
 
             trans.T = FermatArray(fermat,str);
-        } else if (str0.substr(0,2) == "L[" && str0.back() == ']') {
+        } else if (str0.substr(0,2) == "L(" && str0.back() == ')') {
             size_t comma = str0.find(',');
             if (comma == string::npos) {
                 throw invalid_argument("parse error");
