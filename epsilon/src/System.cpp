@@ -1162,6 +1162,52 @@ void System::leftfuchsify(const FermatExpression &xj) {
     }            
 }
 
+void System::tjordan(const FermatExpression &xj, bool divep) {
+    if (!singularities.count(xj)) {
+        cout << "no singularity at " << xj.str() << endl;
+        return;
+    }
+
+    FermatArray C = A(xj,singularities.at(xj).rankC).C;
+    eigenvalues_t evs;
+    JordanSystem sys;
+    FermatArray T(fermat,nullMatrix.C.rows(),nullMatrix.C.cols());
+
+    eigen(xj);
+
+    if (divep) {
+        C = C/FermatExpression(fermat,"ep");
+        
+        for (auto &ev : eigenvalues[xj]) {
+            if (ev.first.u != 0) {
+                throw invalid_argument("eigenvalues have to be proportional to ep");
+            }
+            eigen_t ev0;
+
+            ev0.u = ev.first.v;
+            ev0.v = 0;
+
+            evs[ev0] = ev.second;
+        }
+    } else {
+        evs = eigenvalues[xj];
+    }                
+
+    jordanSystem(C,evs,sys);
+
+    int i = 1;
+    for (auto &b : sys) {
+        for (auto &v : b.rootvectors) {
+            T.setColumn(i++,v);
+        }
+    }
+    
+    if (i != T.rows()+1) throw invalid_argument("wrong number of root vectors");
+
+    transform(T);
+}
+
+
 bool System::projectorQ(const FermatExpression &x1, const FermatExpression &x2, FermatArray &Q) {
     list<JordanBlock> inv;
     int i,k,k0;
@@ -2446,7 +2492,6 @@ void System::inverseJordan(const FermatExpression &xj, list<JordanBlock> &inv) {
 
     i = 1;
     for (auto &b : jordans[xj]) {
-        int ctr=1;
         for (auto &v : b.rootvectors) {
             U.setRow(i++,v);
         }

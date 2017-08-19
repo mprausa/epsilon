@@ -98,6 +98,7 @@ class System {
         int leftreduce(const FermatExpression &xj);
         void leftfuchsify();
         void leftfuchsify(const FermatExpression &xj);
+        void tjordan(const FermatExpression &xj, bool divep);
 
         void balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);
         void transform(const FermatArray &T); 

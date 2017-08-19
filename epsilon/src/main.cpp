@@ -52,6 +52,8 @@ typedef struct {
         LeftReduce,
         LeftFuchsify,
         LeftFuchsifyAt,
+        Jordan,
+        JordanEp,
         Dyson
     } type;
     
@@ -282,6 +284,34 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 cout << endl;
                 break;
             }
+            case Job::Jordan: {
+                FermatExpression xj;
+
+                cout << endl << "jordan @ " << it->sing << endl << "------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->tjordan(xj,false);
+                break;
+            }
+            case Job::JordanEp: {
+                FermatExpression xj;
+
+                cout << endl << "jordan-ep @ " << it->sing << endl << "---------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->tjordan(xj,true);
+                break;
+            }
             case Job::Dyson: {
                 cout << endl << "dyson" << endl << "-----" << endl;
                 Dyson dyson(*system);
@@ -360,6 +390,8 @@ static void usage(string progname) {
     cerr << setw(60) << "   --left-fuchsify-at <sing>"                               << "Reduce Poincare rank of block to the left of the active block to zero." << endl;
     cerr << setw(60) << "   --left-ranks"                                            << "Show Poincare ranks of block to the left of active block." << endl;
     cerr << setw(60) << "   --left-reduce <sing>"                                    << "Reduce Poincare rank of block to the left of active block at singularity <sing> (manual approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --jordan <sing>"                                         << "Transform residue at singularity <sing> to jordan normal form." << endl;
+    cerr << setw(60) << "   --jordan-ep <sing>"                                      << "Transform residue divided by ep at singularity <sing> to jordan normal form." << endl;
     cerr << setw(60) << "   --dyson <filename> <order> (GPL|HPL|HPLalt) (mma|form)"  << "Write Dyson operator up to order <order> in ep to <filename>." << endl;
     cerr << endl;
     cerr << "ENVIRONMENT:" << endl;
@@ -521,6 +553,20 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--left-fuchsify-at") {
             job.type = Job::LeftFuchsifyAt;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
+
+            jobs.push_back(job);
+        } else if (*it == "--jordan") {
+            job.type = Job::Jordan;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
+
+            jobs.push_back(job);
+        } else if (*it == "--jordan-ep") {
+            job.type = Job::JordanEp;
 
             if (++it == parameters.end()) usage(progname);
             job.sing = *it;
