@@ -2,8 +2,8 @@
 
 /*
  *  include/HalfInteger.h
- * 
- *  Copyright (C) 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2017, 2018 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,8 @@ class HalfInteger {
     public:
         HalfInteger();
         HalfInteger(int i);
-        
+        HalfInteger(int i, int);
+
         bool operator<(const HalfInteger &other) const;
         bool operator<=(const HalfInteger &other) const;
         bool operator>(const HalfInteger &other) const;
@@ -45,6 +46,7 @@ class HalfInteger {
         bool operator==(int other) const;
         bool operator!=(int other) const;
 
+        HalfInteger operator-(const HalfInteger &other) const;
         HalfInteger operator-() const;
 
         HalfInteger &operator=(int i);
@@ -52,11 +54,14 @@ class HalfInteger {
         void inc(bool half);
         void dec(bool half);
 
+        bool isInteger() const;
+
         void print(std::ostream &os) const;
-};    
+};
 
 std::ostream &operator<<(std::ostream &os, const HalfInteger &hi);
- 
+
+extern const HalfInteger onehalf;
 
 #endif //__HALF_INTEGER_H
 

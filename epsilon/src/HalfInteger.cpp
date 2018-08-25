@@ -2,8 +2,8 @@
 
 /*
  *  src/HalfInteger.cpp
- * 
- *  Copyright (C) 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2017, 2018 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,12 +23,18 @@
 #include <sstream>
 using namespace std;
 
+const HalfInteger onehalf(1,2);
+
 HalfInteger::HalfInteger() {
     value = 0;
 }
 
 HalfInteger::HalfInteger(int i) {
 	value = 2*i;
+}
+
+HalfInteger::HalfInteger(int i, int) {
+	value = i;
 }
 
 bool HalfInteger::operator<(const HalfInteger &other) const {
@@ -79,6 +85,13 @@ bool HalfInteger::operator!=(int other) const {
 	return value != 2*other;
 }
 
+HalfInteger HalfInteger::operator-(const HalfInteger &other) const {
+    HalfInteger hi;
+
+    hi.value = value - other.value;
+    return hi;
+}
+
 HalfInteger HalfInteger::operator-() const {
     HalfInteger hi;
 
@@ -99,6 +112,10 @@ void HalfInteger::dec(bool half) {
     value -= half?1:2;
 }
 
+bool HalfInteger::isInteger() const {
+    return !(value & 1);
+}
+
 void HalfInteger::print(ostream &os) const {
     stringstream strm;
     if (value & 1) {
@@ -112,6 +129,6 @@ void HalfInteger::print(ostream &os) const {
 ostream &operator<<(ostream &os, const HalfInteger &hi) {
     hi.print(os);
     return os;
-}    
-    
-	
+}
+
+

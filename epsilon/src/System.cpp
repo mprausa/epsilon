@@ -2,8 +2,8 @@
 
 /*
  *  src/System.cpp
- * 
- *  Copyright (C) 2016, 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2016 - 2018 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -687,10 +687,17 @@ void System::normalize() {
             bool normalized=true;
             eigen(x0);
 
-            for (auto &e : eigenvalues[x0]) {
-                if (e.first.u != 0) {
+            for (auto it1 = eigenvalues[x0].begin(); normalized && it1 != eigenvalues[x0].end(); ++it1) {
+                if (it1->first.u != 0 && it1->first.u != onehalf && it1->first.u != -onehalf) {
                     normalized = false;
                     break;
+                }
+
+                for (auto it2 = next(it1); it2 != eigenvalues[x0].end(); ++it2) {
+                    if (it1->first.v == it2->first.v && (it1->first.u - it2->first.u).isInteger()) {
+                        normalized = false;
+                        break;
+                    }
                 }
             }
 
@@ -1484,7 +1491,13 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
             eigen(l.first);
 
             for (auto &e1 : eigenvalues[l.first]) {
-                if ((!x0.fer() || second) && e1.first.u >= 0) continue;
+                if (!x0.fer() || second) {
+                    if (e1.first.u >= 0) continue;
+                    if (e1.first.u == -onehalf) {
+                        eigen_t e{onehalf,e1.first.v};
+                        if (!eigenvalues[l.first].count(e)) continue;
+                    }
+                }
 
                 vector<FermatArray> vectors1;
                 Eigenvectors(A0,e1.first,vectors1);
@@ -1495,7 +1508,7 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
                     eigen(r.first);
 
                     for (auto &e2 : eigenvalues[r.first]) {
-                        if ((!x0.fer() || !second) && e2.first.u <= 0) continue;
+                        if ((!x0.fer() || !second) && e2.first.u <= onehalf) continue;
 
                         vector<FermatArray> vectors2;
                         Eigenvectors(B0,e2.first,vectors2);
