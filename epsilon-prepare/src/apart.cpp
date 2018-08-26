@@ -2,8 +2,8 @@
 
 /*
  *  src/apart.cpp
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2018 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -206,7 +206,10 @@ static void polydiv(const ex &a, const ex &b, const ex &x, ex &q, ex &r) {
         term *= pow(x, rdeg - bdeg);
         v.push_back(term);
         r = (r - term * b).normal();
-        r = r.numer().expand()/r.denom().expand();
+
+        ex numden = r.numer_denom();
+
+        r = numden.op(0).expand()/numden.op(1).expand();
 
         if (r.is_zero()) break;
         rdeg = r.degree(x);
@@ -223,11 +226,12 @@ ex modout(ex expr) {
     }
 
     return expr;
-}    
+}
 
 static ex limit(const ex &expr, const symbol &x, const ex &x0) {
-    ex num = expr.numer();
-    ex den = expr.denom();
+    ex numden = expr.numer_denom();
+    ex num = numden.op(0);
+    ex den = numden.op(1);
 
     for(;;) {
         ex num0 = modout(num.subs(x == x0).expand()).normal();
@@ -246,16 +250,17 @@ static ex limit(const ex &expr, const symbol &x, const ex &x0) {
 
         num = num.diff(x).normal();
         den = den.diff(x).normal();
-    }        
+    }
 
     return expr.subs(x == x0);
 }
 
 void apart(const ex &expr, const symbol &x, map<apart_sing,ex> &coeffsA, map<int,ex> &coeffsB) {
-    ex num = expr.numer().expand();
-    ex den = expr.denom().expand();
+    ex numden = expr.numer_denom();
+    ex num = numden.op(0);
+    ex den = numden.op(1);
     map<ex,int,ex_is_less> zeros;
-    
+
     ex b = 0;
 
     if (num.degree(x) >= den.degree(x)) {
