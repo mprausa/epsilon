@@ -2,8 +2,8 @@
 
 /*
  *  src/prepare.cpp
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2018 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,8 +38,9 @@ static void check(const matrix &mat, const symbol &x, const map<apart_sing,matri
     check = check.normal();
 
     for (int n=0; n<check.nops(); ++n) {
-        ex num=check.op(n).numer();
-        ex den=check.op(n).denom();
+        ex numden = check.op(n).numer_denom();
+        ex num=numden.op(0);
+        ex den=numden.op(1);
 
         check.let_op(n) = modout(num)/modout(den);
     } 
