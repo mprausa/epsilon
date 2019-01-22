@@ -2,8 +2,8 @@
 
 /*
  *  src/main.cpp
- * 
- *  Copyright (C) 2016, 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2017, 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,7 +111,6 @@ static void executeFermat(Fermat *fermat, const string &filename) {
 }
 
 static void sourceFermatFunctions(Fermat *fermat) {
-    bool first=true;
     string tmpdir = getenv("TMPDIR")?getenv("TMPDIR"):"/tmp";
     tmpdir += "/epsilonXXXXXX";
 
@@ -126,15 +125,13 @@ static void sourceFermatFunctions(Fermat *fermat) {
         rtrim(line);
         if (line == "") continue;
 
-        if (!first) file << endl;
-        file << line;
-        first=false;
+        file << line << endl;
     }
 
     file.close();
 
     (*fermat)("&(U=0)");
-    (*fermat)("&(R=\'"+tmpdir+"/functions.fer\')"); 
+    (*fermat)("&(R=\'"+tmpdir+"/functions.fer\')");
     (*fermat)("&(U=1)");
 
     unlink((tmpdir+"/functions.fer").c_str());

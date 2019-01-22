@@ -34,4 +34,4 @@ Function GramSchm(x;c,n,j) =
 		@([w],[v]);
 	fi;
 .;
-
+&x;
