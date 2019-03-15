@@ -65,7 +65,9 @@ class System {
         struct singLess {
             bool operator() (const FermatExpression &a, const FermatExpression &b) const;
         };
- 
+
+        FermatExpression shift;
+
         std::map<FermatExpression,poincareRank,singLess> singularities;
         int kmax;
         int kmaxC;
@@ -87,6 +89,8 @@ class System {
 
         void write(std::string filename) const;
         TransformationQueue *transformationQueue();
+
+        void setshift(const FermatExpression &shift);
 
         void analyze();
         void fuchsify();

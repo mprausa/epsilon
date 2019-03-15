@@ -2,8 +2,8 @@
 
 /*
  *  src/System.cpp
- * 
- *  Copyright (C) 2016, 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2017 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ bool System::singLess::operator() (const FermatExpression &a, const FermatExpres
         int an = atoi(as.c_str());
         int bn = atoi(bs.c_str());
         return an < bn;
-    } 
+    }
 
     return as < bs;
 }
@@ -71,15 +71,17 @@ bool System::singLess::operator() (const FermatExpression &a, const FermatExpres
 System::System(Fermat *fermat, bool echfer) : tqueue(fermat) {
     this->fermat = fermat;
     this->echfer = echfer;
+    this->shift = FermatExpression(fermat,"0");
 }
 
 System::System(Fermat *fermat, string filename, int start, int end, bool echfer) : tqueue(fermat) {
 	string str;
 	ifstream file(filename);
     int r;
-    
+
     this->fermat = fermat;
     this->echfer = echfer;
+    this->shift = FermatExpression(fermat,"0");
 
     if (!file.is_open()) {
         throw invalid_argument("unable to open file.");
@@ -98,7 +100,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
 
         string str0(str,0,colon);
         str = str.erase(0,colon+1);
-       
+
         if (str0.substr(0,2) == "A[" && str0.back() == ']') {
             size_t comma = str0.find(',');
             if (comma == string::npos) {
@@ -136,7 +138,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
                     singularities[singularity.point].rank = -1;
                 }
             }
-            
+
             if (!mat.A.isZero() || !mat.B.isZero() || !mat.C.isZero() || !mat.D.isZero() || ! mat.E.isZero() || !mat.F.isZero()) {
                 if (singularities.count(singularity.point)) {
                     singularities[singularity.point].rank = max(singularities[singularity.point].rank,singularity.rank);
@@ -149,7 +151,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
             int k = stoi(str0.substr(2,str0.size()-3));
             TriangleBlockMatrix mat;
             int r;
-            
+
             FermatArray array(fermat,str);
             r = array.rows();
             if (end<0) end=r;
@@ -200,7 +202,7 @@ System::System(Fermat *fermat, string filename, int start, int end, bool echfer)
     } else {
         singularities[infinity].rankC = kmaxC+1;
     }
-    
+
     if (kmax<0) {
         TriangleBlockMatrix mat = A(infinity,0);
         if (!mat.A.isZero() || !mat.B.isZero() || !mat.C.isZero() || !mat.D.isZero() || ! mat.E.isZero() || !mat.F.isZero()) {
@@ -222,7 +224,8 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
 
     fermat = orig.fermat;
     echfer = orig.echfer;
- 
+    shift = orig.shift;
+
     kmaxC = kmax = -1;
 
     for (auto it = orig._A.begin(); it != orig._A.end(); ++it) {
@@ -244,7 +247,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
         }
 
         _A[it->first] = mat;
-            
+
         if (!mat.C.isZero()) {
             if (singularities.count(it->first.point)) {
                 singularities[it->first.point].rankC = max(singularities[it->first.point].rankC,it->first.rank);
@@ -253,7 +256,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
                 singularities[it->first.point].rank = -1;
             }
         }
-            
+
         if (!mat.A.isZero() || !mat.B.isZero() || !mat.C.isZero() || !mat.D.isZero() || ! mat.E.isZero() || !mat.F.isZero()) {
             if (singularities.count(it->first.point)) {
                 singularities[it->first.point].rank = max(singularities[it->first.point].rank,it->first.rank);
@@ -283,7 +286,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
         }
 
         _B[it->first] = mat;
-            
+
         if (!mat.C.isZero()) {
             if (it->first>kmaxC) kmaxC=it->first;
         }
@@ -291,7 +294,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
             if (it->first>kmax) kmax=it->first;
         }
     }
-    
+
     nullMatrix.A = FermatArray(fermat,start-1,start-1);
     nullMatrix.B = FermatArray(fermat,end-start+1,start-1);
     nullMatrix.C = FermatArray(fermat,end-start+1,end-start+1);
@@ -300,7 +303,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
     nullMatrix.F = FermatArray(fermat,r-end,r-end);
 
     tqueue.setpadding(start-1,r-end);
-    
+
     singularities[infinity].rankC = -1;
     singularities[infinity].rank = -1;
 
@@ -313,7 +316,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
     } else {
         singularities[infinity].rankC = kmaxC+1;
     }
-    
+
     if (kmax<0) {
         TriangleBlockMatrix mat = A(infinity,0);
         if (!mat.A.isZero() || !mat.B.isZero() || !mat.C.isZero() || !mat.D.isZero() || ! mat.E.isZero() || !mat.F.isZero()) {
@@ -331,6 +334,7 @@ System::System(const System &orig, const FermatArray &left, const FermatArray &r
 
     fermat = orig.fermat;
     echfer = orig.echfer;
+    shift = orig.shift;
     nullMatrix = orig.nullMatrix;
     singularities = orig.singularities;
     kmaxC = orig.kmaxC;
@@ -354,13 +358,13 @@ System::System(const System &orig, const FermatArray &left, const FermatArray &r
         } else {
             mat.E = FermatArray();
         }
-        
+
         _A[it->first] = mat;
     }
 
     for (auto it = orig._B.begin(); it != orig._B.end(); ++it) {
         mat.C = FermatArray(left,it->second.C,right);
-        
+
         if (it->second.B.cols() > 0) {
             mat.B = FermatArray(left,it->second.B);
         } else {
@@ -380,9 +384,10 @@ System::System(const System &orig, const FermatArray &left, const FermatArray &r
 
 System::System(const System &orig, int ep) : tqueue(orig.fermat) {
     TriangleBlockMatrix mat;
-    
+
     fermat = orig.fermat;
     echfer = orig.echfer;
+    shift = orig.shift;
     nullMatrix = orig.nullMatrix;
     singularities = orig.singularities;
     kmaxC = orig.kmaxC;
@@ -393,13 +398,13 @@ System::System(const System &orig, int ep) : tqueue(orig.fermat) {
     mat.D = FermatArray();
     mat.E = FermatArray();
     mat.F = FermatArray();
-    
+
     for (auto it = orig._A.begin(); it != orig._A.end(); ++it) {
         mat.C = it->second.C.subst("ep",ep);
 
         _A[it->first] = mat;
     }
-    
+
     for (auto it = orig._B.begin(); it != orig._B.end(); ++it) {
         mat.C = it->second.C.subst("ep",ep);
 
@@ -458,6 +463,12 @@ TransformationQueue *System::transformationQueue() {
     return &tqueue;
 }
 
+void System::setshift(const FermatExpression &shift) {
+    this->shift = shift;
+    eigenvalues.clear();
+    jordans.clear();
+}
+
 void System::analyze() {
     auto check = [](const FermatArray &mat, int start, int end) -> int {
         for (int c=end+1; c<=mat.cols(); ++c) {
@@ -465,7 +476,7 @@ void System::analyze() {
 
             if (right.isZero()) return c-1;
         }
-        
+
         return mat.cols();
     };
 
@@ -491,14 +502,14 @@ void System::analyze() {
                 size1 = check(b.second.C,start,start+size-1) - start + 1;
                 if (size1 != size) break;
             }
-                
+
             if (size1 == size) break;
             size = size1;
         }
-        
+
         blocks.push_back({start,start+size-1});
 
-        start += size;                
+        start += size;
     }
 
     int cnt=1;
@@ -507,7 +518,7 @@ void System::analyze() {
     for (auto &b : blocks) {
         int start = b.first;
         int end = b.second;
- 
+
         cout << "block " << (cnt++) << ": [" << start+offset << "," << end+offset << "]" << endl;
 
         stringstream strm;
@@ -529,7 +540,7 @@ void System::analyze() {
             cout << "  singularities:" << strm.str() << endl;
         } else {
             cout << "  no singularities." << endl;
-        }                    
+        }
 
         if (!nullMatrix.A.rows()) {
             strm.str("");
@@ -555,7 +566,7 @@ void System::analyze() {
         }
     }
 }
- 
+
 void System::fuchsify() {
     FermatExpression x1,x2;
     FermatArray Q;
@@ -583,7 +594,7 @@ void System::fuchsify() {
                 }
             }
         }
-                        
+
         if (finished) break;
 
         if (!success) {
@@ -597,7 +608,11 @@ void System::fuchsify() {
                 }
             }
         }
-       
+
+        if (shift.str() != "0") {
+            Q = Q.subst("ep",FermatExpression(fermat,"ep") - shift);
+        }
+
         balance(Q,x1,x2);
     }
 }
@@ -632,6 +647,10 @@ void System::fuchsify(const FermatExpression &x1) {
             projectorP(x1,Q);
         }
 
+        if (shift.str() != "0") {
+            Q = Q.subst("ep",FermatExpression(fermat,"ep") - shift);
+        }
+
         balance(Q,x1,x2);
 
         printSingularities();
@@ -646,10 +665,10 @@ void System::normalize() {
             throw invalid_argument("not in fuchsian form");
         }
     }
- 
+
     // find non apparent singularity
     FermatExpression x0;
-    
+
     for (auto it=singularities.begin(); !found && it != singularities.end(); ++it) {
         if (it->first == infinity) continue;
         eigen(it->first);
@@ -674,7 +693,7 @@ void System::normalize() {
     }
 
     printEigenvalues();
-    
+
     for(;;) {
         FermatExpression x1,x2;
         FermatArray P;
@@ -702,6 +721,10 @@ void System::normalize() {
                 throw invalid_argument("unable to normalize system.");
             }
             cout << "balance with regular point [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
+        }
+
+        if (shift.str() != "0") {
+            P = P.subst("ep",FermatExpression(fermat,"ep") - shift);
         }
 
         balance(P,x1,x2);
@@ -735,6 +758,10 @@ void System::factorep() {
         if (xj == infinity) continue;
 
         FermatArray Aep = A(xj,0).C;
+        if (shift.str() != "0") {
+            Aep = Aep.subst("ep",FermatExpression(fermat,"ep") + shift);
+        }
+
         FermatArray Amu = Aep.subst("ep",mu);
 
         #define pos(i,j) (((i)-1)*N+(j))
@@ -762,8 +789,8 @@ void System::factorep() {
         #undef pos
     }
 
-    rk = echelon->run(); 
-   
+    rk = echelon->run();
+
     FermatArray T(fermat,N,N);
     T.assign("0");
 
@@ -788,9 +815,9 @@ void System::factorep() {
 
             T.set(rpos(c),cpos(c),FermatExpression(fermat,sym));
         }
-       
+
         pos = r.col1();
- 
+
         for (auto &e : r) {
             if (e.first == pos) {
                 if (e.second.str() != "1") {
@@ -798,13 +825,13 @@ void System::factorep() {
                 }
                 continue;
             }
-            
+
             stringstream strm;
             string sym;
-               
+
             strm << "t" << rpos(e.first) << "x" << cpos(e.first);
             sym = strm.str();
-            
+
             if (!symbols.count(sym)) {
                 fermat->addSymbol(sym);
                 symbols.insert(sym);
@@ -841,7 +868,7 @@ void System::factorep() {
     if (det.str() == "0") {
         throw invalid_argument("transformation is singular.");
     }
-   
+
     for (auto it=symbols.begin(); it != symbols.end(); ++it) {
         for (int _sym0=0; _sym0 <= 200; ++_sym0) {
             int sym0 = ((_sym0&1)?1:-1)*((_sym0+1)>>1);
@@ -859,6 +886,10 @@ void System::factorep() {
         }
     }
 
+    if (shift.str() != "0") {
+        T = T.subst("ep",FermatExpression(fermat,"ep") - shift);
+    }
+
     transform(T);
 }
 
@@ -873,7 +904,7 @@ void System::factorep(int mu) {
 
     set<string> symbols;
     int rk;
-    
+
     EchelonBase *echelon;
 
     if (echfer) {
@@ -888,6 +919,11 @@ void System::factorep(int mu) {
             if (xj == infinity) continue;
 
             FermatArray Aep = A(xj,0).C;
+
+            if (shift.str() != "0") {
+                Aep = Aep.subst("ep",FermatExpression(fermat,"ep") + shift);
+            }
+
             FermatArray Amu = Aep.subst("ep",mu);
 
             #define pos(i,j) (((i)-1)*N+(j))
@@ -921,7 +957,7 @@ void System::factorep(int mu) {
     }
 
     rk = echelon->run();
- 
+
     FermatArray T(fermat,N,N);
     T.assign("0");
 
@@ -946,9 +982,9 @@ void System::factorep(int mu) {
 
             T.set(rpos(c),cpos(c),FermatExpression(fermat,sym));
         }
-       
+
         pos = r.col1();
- 
+
         for (auto &e : r) {
             if (e.first == pos) {
                 if (e.second.str() != "1") {
@@ -956,13 +992,13 @@ void System::factorep(int mu) {
                 }
                 continue;
             }
-            
+
             stringstream strm;
             string sym;
-               
+
             strm << "t" << rpos(e.first) << "x" << cpos(e.first);
             sym = strm.str();
-            
+
             if (!symbols.count(sym)) {
                 fermat->addSymbol(sym);
                 symbols.insert(sym);
@@ -988,7 +1024,7 @@ void System::factorep(int mu) {
 
         T.set(rpos(c),cpos(c),FermatExpression(fermat,sym));
     }
-    
+
     #undef rpos
     #undef cpos
 
@@ -999,7 +1035,7 @@ void System::factorep(int mu) {
     if (det.str() == "0") {
         throw invalid_argument("transformation is singular.");
     }
-   
+
     for (auto it=symbols.begin(); it != symbols.end(); ++it) {
         for (int _sym0=0; _sym0 <= 200; ++_sym0) {
             int sym0 = ((_sym0&1)?1:-1)*((_sym0+1)>>1);
@@ -1015,6 +1051,10 @@ void System::factorep(int mu) {
             } catch (const FermatDivByZero &e) {
             }
         }
+    }
+
+    if (shift.str() != "0") {
+        T = T.subst("ep",FermatExpression(fermat,"ep") - shift);
     }
 
     transform(T);
@@ -1078,7 +1118,7 @@ int System::leftreduce(const FermatExpression &xj) {
             echelon->set(row);
         }
     }
-    
+
     #undef pos
 
     int rk = echelon->run();
@@ -1099,8 +1139,8 @@ int System::leftreduce(const FermatExpression &xj) {
         for (auto it2=r.begin(); it2 != r.end(); ++it2) {
             it = it2;
         }
-       
-        if (it->first != B.rows()*B.cols()+1) continue; 
+
+        if (it->first != B.rows()*B.cols()+1) continue;
 
         int row = ((pos-1)/B.cols())+1;
         int col = ((pos-1)%B.cols())+1;
@@ -1136,7 +1176,7 @@ void System::leftfuchsify() {
 
         while (k>0) {
             k = leftreduce(xj);
-        }            
+        }
     }
 }
 
@@ -1147,7 +1187,7 @@ void System::leftfuchsify(const FermatExpression &xj) {
         cout << "no singularity at " << pstr(xj) << endl;
         return;
     }
-    
+
     for (k=singularities[xj].rank; k>=0 && A(xj,k).B.isZero(); --k);
 
     if (k<0) {
@@ -1159,7 +1199,7 @@ void System::leftfuchsify(const FermatExpression &xj) {
 
     while (k>0) {
         k = leftreduce(xj);
-    }            
+    }
 }
 
 void System::tjordan(const FermatExpression &xj, bool divep) {
@@ -1169,6 +1209,10 @@ void System::tjordan(const FermatExpression &xj, bool divep) {
     }
 
     FermatArray C = A(xj,singularities.at(xj).rankC).C;
+    if (shift.str() != "0") {
+        C = C.subst("ep",FermatExpression(fermat,"ep") + shift);
+    }
+
     eigenvalues_t evs;
     JordanSystem sys;
     FermatArray T(fermat,nullMatrix.C.rows(),nullMatrix.C.cols());
@@ -1177,7 +1221,7 @@ void System::tjordan(const FermatExpression &xj, bool divep) {
 
     if (divep) {
         C = C/FermatExpression(fermat,"ep");
-        
+
         for (auto &ev : eigenvalues[xj]) {
             if (ev.first.u != 0) {
                 throw invalid_argument("eigenvalues have to be proportional to ep");
@@ -1191,7 +1235,7 @@ void System::tjordan(const FermatExpression &xj, bool divep) {
         }
     } else {
         evs = eigenvalues[xj];
-    }                
+    }
 
     jordanSystem(C,evs,sys);
 
@@ -1201,8 +1245,12 @@ void System::tjordan(const FermatExpression &xj, bool divep) {
             T.setColumn(i++,v);
         }
     }
-    
+
     if (i != T.rows()+1) throw invalid_argument("wrong number of root vectors");
+
+    if (shift.str() != "0") {
+        T = T.subst("ep",FermatExpression(fermat,"ep") - shift);
+    }
 
     transform(T);
 }
@@ -1211,7 +1259,7 @@ void System::tjordan(const FermatExpression &xj, bool divep) {
 bool System::projectorQ(const FermatExpression &x1, const FermatExpression &x2, FermatArray &Q) {
     list<JordanBlock> inv;
     int i,k,k0;
-    set<int> S; 
+    set<int> S;
 
     TriangleBlockMatrix A1 = A(x1,singularities[x1].rankC-1);
 
@@ -1231,8 +1279,13 @@ bool System::projectorQ(const FermatExpression &x1, const FermatExpression &x2, 
     for (auto &b : inv) {
         V0.setRow(i++,*(b.rootvectors.begin()));
     }
- 
-    FermatArray L0(V0,A1.C,U0);
+
+    FermatArray C = A1.C;
+    if (shift.str() != "0") {
+        C = C.subst("ep",FermatExpression(fermat,"ep") + shift);
+    }
+
+    FermatArray L0(V0,C,U0);
     FermatArray L1(V0,U0);
     FermatArray Delta;
 
@@ -1267,38 +1320,43 @@ bool System::projectorQ(const FermatExpression &x1, const FermatExpression &x2, 
 void System::projectorP(const FermatExpression &x1, FermatArray &P) {
     list<JordanBlock> inv;
     int i,k,k0;
-    set<int> S; 
+    set<int> S;
 
     TriangleBlockMatrix A1 = A(x1,singularities[x1].rankC-1);
-    
+
     jordan(x1);
 
     inverseJordan(x1,inv);
-    
+
     FermatArray U0(fermat,nullMatrix.C.cols(),jordans[x1].size());
     FermatArray V0(fermat,inv.size(),nullMatrix.C.rows());
     FermatArray Vn(fermat,nullMatrix.C.cols(),inv.size());
-    
+
     i=1;
     for (auto &b : jordans[x1]) {
         U0.setColumn(i++,*(b.rootvectors.begin()));
     }
-    
+
     i=1;
     for (auto it = inv.begin(); it != inv.end(); ++it) {
         V0.setRow(i,*(it->rootvectors.begin()));
         Vn.setColumn(i,it->rootvectors.back());
         ++i;
     }
-    
-    FermatArray L0(V0,A1.C,U0);
+
+    FermatArray C = A1.C;
+    if (shift.str() != "0") {
+        C = C.subst("ep",FermatExpression(fermat,"ep") + shift);
+    }
+
+    FermatArray L0(V0,C,U0);
     FermatArray L1(V0,U0);
     FermatArray Delta;
 
     for (k=0; k<L1.rows() && L1(k+1,k+1).str() == "0" ; ++k);
 
     k0 = reduceL0(L0,k,x1,S,Delta);
-    
+
     FermatArray id(fermat,Delta.rows(),Delta.cols());
     id.assign("[1] + 0");
 
@@ -1317,7 +1375,7 @@ void System::projectorP(const FermatExpression &x1, FermatArray &P) {
 
     FermatArray Uk(fermat,U0.rows(),S.size());
     FermatArray Vk(fermat,Vn.rows(),S.size());
-    
+
     i=1;
     for (auto it=S.begin(); it != S.end(); ++it) {
         Uk.setColumn(i,FermatArray(U0,1,U0.rows(),*it,*it));
@@ -1354,12 +1412,12 @@ int System::reduceL0(FermatArray L0, int k, const FermatExpression &x1, set<int>
         for (i=1,iit = jordans[x1].begin(); i<=L0x.cols(); ++i,++iit) {
             FermatArray L0p(L0x,1,L0x.rows(),1,i);
             int newrank = L0p.rank();
-           
+
             if (!S.count(i) && newrank == rank) {
                 if (FermatArray(L0p,1,L0p.rows(),i,i).isZero()) break;
 
                 int rk = L0p.rowEchelon();
-                
+
                 cj = FermatArray(fermat,i-1,1);
                 cj.assign("0");
 
@@ -1400,7 +1458,7 @@ int System::reduceL0(FermatArray L0, int k, const FermatExpression &x1, set<int>
     } while(i>k);
 
     S.erase(i);
-   
+
     return i;
 }
 
@@ -1445,7 +1503,7 @@ bool System::invariantSubspace(const FermatExpression &x2, const FermatArray &Uk
 
                 Vk.setColumn(pos,v);
                 found.insert(pos);
-            
+
                 if (found.size() == Uk.cols()) {
                     return true;
                 }
@@ -1466,9 +1524,9 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
         if (singularities.count(x0)) {
             left[x0] = singularities[x0];
         } else {
-            left[x0].rank = left[x0].rankC = -1; 
+            left[x0].rank = left[x0].rankC = -1;
         }
-        
+
         right = singularities;
     } else {
         left = right = singularities;
@@ -1481,6 +1539,10 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
 
             FermatArray A0 = A(l.first,0).C;
 
+            if (shift.str() != "0") {
+                A0 = A0.subst("ep",FermatExpression(fermat,"ep") + shift);
+            }
+
             eigen(l.first);
 
             for (auto &e1 : eigenvalues[l.first]) {
@@ -1492,6 +1554,9 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
                     if (l.first == r.first) continue;
 
                     FermatArray B0 = A(r.first,0).C.transpose();
+                    if (shift.str() != "0") {
+                        B0 = B0.subst("ep",FermatExpression(fermat,"ep") + shift);
+                    }
                     eigen(r.first);
 
                     for (auto &e2 : eigenvalues[r.first]) {
@@ -1514,9 +1579,9 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
                                     P = P0;
                                     x1 = l.first;
                                     x2 = r.first;
-                                }                                    
+                                }
                             }
-                        }                            
+                        }
                     }
                 }
             }
@@ -1562,10 +1627,10 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
     System PbarMP(*this,id-P,P);
 
     // A(x1,0)
-    
+
     sing.point=x1;
     sing.rank=0;
-   
+
     if (!singularities.count(x1)) {
         singularities[x1].rank = -1;
         singularities[x1].rankC = -1;
@@ -1600,14 +1665,14 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
     _A[sing].C += P;
 
     // A(x1,k>0)
-    
+
     for (int k=1; k <= singularities[x1].rank; ++k) {
         sing.point = x1;
         sing.rank = k;
 
         _A[sing].C += PbarMP.A(x1,k-1).C*(x1-x2);
         _A[sing].E += PbarMP.A(x1,k-1).E*(x1-x2);
-        
+
         for (int n=0; n+k<=singularities[x1].rank; ++n) {
             _A[sing].C -= PMPbar.A(x1,n+k).C/pow(x2-x1,n);
             _A[sing].B -= PMPbar.A(x1,n+k).B/pow(x2-x1,n);
@@ -1624,10 +1689,10 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
         _A[sing].D = nullMatrix.D;
         _A[sing].E = PbarMP.A(x1,singularities[x1].rank).E*(x1-x2);
         _A[sing].F = nullMatrix.F;
-    } 
-    
+    }
+
     // A(x2,0)
-    
+
     sing.point=x2;
     sing.rank=0;
 
@@ -1665,7 +1730,7 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
     _A[sing].C -= P;
 
     // A(x2,k>0)
-    
+
     for (int k=1; k <= singularities[x2].rank; ++k) {
         sing.point = x2;
         sing.rank = k;
@@ -1678,7 +1743,7 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
             _A[sing].E -= PbarMP.A(x2,n+k).E/pow(x1-x2,n);
         }
     }
-    
+
     if (!PMPbar.A(x2,singularities[x2].rank).B.isZero() || !PMPbar.A(x2,singularities[x2].rank).C.isZero()) {
         sing.point = x2;
         sing.rank = singularities[x2].rank+1;
@@ -1689,7 +1754,7 @@ void System::balance_x1_x2(const FermatArray &P, const FermatExpression &x1, con
         _A[sing].D = nullMatrix.D;
         _A[sing].E = nullMatrix.E;
         _A[sing].F = nullMatrix.F;
-    } 
+    }
 
     // A(xj != x1 && xj != x2,k)
 
@@ -1727,14 +1792,14 @@ void System::balance_x1_inf(const FermatArray &P, const FermatExpression &x1) {
     System PbarMP(*this,id-P,P);
 
     // A(x1,0)
-    
+
     sing.point=x1;
     sing.rank=0;
-    
+
     _A[sing].C += -PbarMP.A(x1,0).C - PMPbar.A(x1,0).C + PMPbar.A(x1,1).C;
     _A[sing].B += -PMPbar.A(x1,0).B + PMPbar.A(x1,1).B;
     _A[sing].E -= PbarMP.A(x1,0).E;
-    
+
     for (auto it = PbarMP._A.begin(); it != PbarMP._A.end(); ++it) {
         FermatExpression xj = it->first.point;
         int n = it->first.rank;
@@ -1841,12 +1906,12 @@ void System::balance_inf_x2(const FermatArray &P, const FermatExpression &x2) {
 
     System PMPbar(*this,P,id-P);
     System PbarMP(*this,id-P,P);
-    
+
     // A(x2,0)
 
     sing.point=x2;
     sing.rank=0;
-    
+
     if (!singularities.count(x2)) {
         singularities[x2].rank = -1;
         singularities[x2].rankC = -1;
@@ -1888,11 +1953,11 @@ void System::balance_inf_x2(const FermatArray &P, const FermatExpression &x2) {
         _A[sing].B += -PMPbar.A(x2,k).B + PMPbar.A(x2,k-1).B;
         _A[sing].E += -PbarMP.A(x2,k).E + PbarMP.A(x2,k+1).E;
     }
-    
+
     if (!PMPbar.A(x2,singularities[x2].rank).B.isZero() || !PMPbar.A(x2,singularities[x2].rank).C.isZero()) {
         sing.point = x2;
         sing.rank = singularities[x2].rank+1;
-        
+
         _A[sing].A = nullMatrix.A;
         _A[sing].B = PMPbar.A(x2,singularities[x2].rank).B;
         _A[sing].C = PMPbar.A(x2,singularities[x2].rank).C;
@@ -1971,13 +2036,13 @@ void System::transform(const FermatArray &T) {
         it->second.C = Tinv * it->second.C * T;
         it->second.E = it->second.E * T;
     }
-    
+
     for (auto it = _B.begin(); it != _B.end(); ++it) {
         it->second.B = Tinv * it->second.B;
         it->second.C = Tinv * it->second.C * T;
         it->second.E = it->second.E * T;
     }
-    
+
     tqueue.transform(T);
 }
 
@@ -1990,7 +2055,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
     sing_t sing;
 
     //B
-   
+
     for (auto &s : singularities) {
         FermatExpression xj = s.first;
         if (xj == x1 || xj == infinity) continue;
@@ -2028,7 +2093,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
         for (int i=0; i+k-n-1 <= kmax; ++i) {
             mat += (B(i+k-n-1).C*G - G*B(i+k-n-1).A)*pow(x1,i)*binomi(i+k-n-1,i);
         }
-        
+
         if (mat.isZero()) continue;
 
         sing.point = x1;
@@ -2064,7 +2129,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
             for (int i=0; i+n+m+k <= kmax; ++i) {
                 mat += (B(i+n+m+k).C*G - G*B(i+n+m+k).A) * powi(-1,m) * pow(x1,m+i) * binomi(n+m,n) * binomi(i+n+m+k,i);
             }
-        }            
+        }
 
         if (mat.isZero()) continue;
 
@@ -2074,7 +2139,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
     }
 
     //D
-    
+
     for (auto &s : singularities) {
         FermatExpression xj = s.first;
         if (xj == x1 || xj == infinity) continue;
@@ -2096,7 +2161,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
             _A[sing].D += mat;
         }
     }
-    
+
     for (int n=0; n<k; ++n) {
         FermatArray mat = nullMatrix.D;
 
@@ -2112,7 +2177,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
         for (int i=0; i+k-n-1 <= kmax; ++i) {
             mat += B(i+k-n-1).E*G * pow(x1,i) * binomi(i+k-n-1,i);
         }
-        
+
         if (mat.isZero()) continue;
 
         sing.point = x1;
@@ -2122,7 +2187,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
 
         _A[sing].D += mat;
     }
-    
+
     for (int n=k; n-k <= singularities[x1].rank; ++n) {
         FermatArray mat = A(x1,n-k).E*G;
 
@@ -2135,7 +2200,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
 
         _A[sing].D += mat;
     }
-    
+
     for (int n=0; n<=kmax; ++n) {
         FermatArray mat = nullMatrix.D;
 
@@ -2143,7 +2208,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
             for (int i=0; i+n+m+k <= kmax; ++i) {
                 mat += B(i+n+m+k).E*G * powi(-1,m) * pow(x1,m+i) * binomi(n+m,n) * binomi(i+n+m+k,i);
             }
-        }            
+        }
 
         if (mat.isZero()) continue;
 
@@ -2158,7 +2223,7 @@ void System::lefttransform(const FermatArray &G, const FermatExpression &x1, int
 
 void System::lefttransform_inf(const FermatArray &G, int k) {
     //B
-    
+
     for (auto &s : singularities) {
         FermatExpression xj = s.first;
 
@@ -2180,7 +2245,7 @@ void System::lefttransform_inf(const FermatArray &G, int k) {
             if (!_A.count(sing)) _A[sing] = nullMatrix;
 
             _A[sing].B += mat;
-        }        
+        }
     }
 
     for (int n=0; n<=k-1; ++n) {
@@ -2216,7 +2281,7 @@ void System::lefttransform_inf(const FermatArray &G, int k) {
     }
 
     //D
-    
+
     for (auto &s : singularities) {
         FermatExpression xj = s.first;
 
@@ -2238,7 +2303,7 @@ void System::lefttransform_inf(const FermatArray &G, int k) {
             if (!_A.count(sing)) _A[sing] = nullMatrix;
 
             _A[sing].D += mat;
-        }        
+        }
     }
 
     for (int n=0; n<=k-1; ++n) {
@@ -2270,7 +2335,7 @@ void System::lefttransform_inf(const FermatArray &G, int k) {
 
         _B[n].D += mat;
     }
-    
+
     updatePoincareRanks();
     tqueue.lefttransform(G,infinity,k);
 }
@@ -2375,7 +2440,7 @@ void System::lefttransformFull_inf(const FermatArray &G, int k) {
         if (!_B.count(n)) _B[n] = nullMatrix;
         _B[n].C += B(n-k).C*G - G*B(n-k).C;
     }
-    
+
     updatePoincareRanks();
 }
 
@@ -2392,7 +2457,7 @@ void System::updatePoincareRanks() {
                 singularities[it->first.point].rank = -1;
             }
         }
-        
+
         if (!it->second.A.isZero() || !it->second.B.isZero() || !it->second.C.isZero() || !it->second.D.isZero() || ! it->second.E.isZero() || !it->second.F.isZero()) {
             if (singularities.count(it->first.point)) {
                 singularities[it->first.point].rank = max(singularities[it->first.point].rank,it->first.rank);
@@ -2411,7 +2476,7 @@ void System::updatePoincareRanks() {
             if (it->first>kmax) kmax=it->first;
         }
     }
-    
+
     singularities[infinity].rankC = -1;
     singularities[infinity].rank = -1;
 
@@ -2424,7 +2489,7 @@ void System::updatePoincareRanks() {
     } else {
         singularities[infinity].rankC = kmaxC+1;
     }
-    
+
     if (kmax<0) {
         TriangleBlockMatrix mat = A(infinity,0);
         if (!mat.A.isZero() || !mat.B.isZero() || !mat.C.isZero() || !mat.D.isZero() || ! mat.E.isZero() || !mat.F.isZero()) {
@@ -2435,7 +2500,7 @@ void System::updatePoincareRanks() {
     } else {
         singularities[infinity].rank = kmax+1;
     }
-    
+
     if (singularities[infinity].rank < 0) {
         singularities.erase(infinity);
     }
@@ -2461,7 +2526,7 @@ FermatExpression System::regularPoint() {
         if (!singularities.count(-fn)) {
             return -fn;
         }
-    }        
+    }
 
     throw invalid_argument("no regular point found");
 }
@@ -2469,18 +2534,26 @@ FermatExpression System::regularPoint() {
 void System::jordan(const FermatExpression &xj) {
     if (jordans.count(xj)) return;
     eigen(xj);
- 
+
     FermatArray C = singularities.count(xj) ? A(xj,singularities.at(xj).rankC).C : nullMatrix.C;
+
+    if (shift.str() != "0") {
+        C = C.subst("ep",FermatExpression(fermat,"ep") + shift);
+    }
+
     jordanSystem(C,eigenvalues[xj],jordans[xj]);
 }
 
 void System::eigen(const FermatExpression &xj) {
     if (eigenvalues.count(xj)) return;
     FermatArray C = singularities.count(xj) ? A(xj,singularities.at(xj).rankC).C : nullMatrix.C;
+    if (shift.str() != "0") {
+        C = C.subst("ep",FermatExpression(fermat,"ep") + shift);
+    }
     eigenvalues[xj] = findEigenvalues(C,100);
 }
 
-  
+
 void System::inverseJordan(const FermatExpression &xj, list<JordanBlock> &inv) {
     FermatArray U(fermat,nullMatrix.C.rows(),nullMatrix.C.cols());
     FermatArray V(fermat);
@@ -2582,24 +2655,24 @@ FermatArray System::putTogether(const TriangleBlockMatrix &A) const {
         strm.str("");
         strm.clear();
         strm << "[" << B.name() << "[1~" << A.A.rows() << ",1~" << A.A.cols() << "]] := [" << A.A.name() << "]";
-    
+
         (*fermat)(strm.str());
-        
+
         strm.str("");
         strm.clear();
         strm << "[" << B.name() << "[" << A.A.rows()+1 << "~" << A.A.rows()+A.B.rows() << ",1~" << A.B.cols() << "]] := [" << A.B.name() << "]";
-    
+
         (*fermat)(strm.str());
 
         if (A.D.rows() > 0) {
             strm.str("");
             strm.clear();
             strm << "[" << B.name() << "[" << A.A.rows()+A.B.rows()+1 << "~" << A.A.rows()+A.B.rows()+A.D.rows() << ",1~" << A.D.cols() << "]] := [" << A.D.name() << "]";
-        
+
             (*fermat)(strm.str());
         }
     }
-        
+
     strm.str("");
     strm.clear();
     strm << "[" << B.name() << "[" << A.A.rows()+1 << "~" << A.A.rows()+A.C.rows() << "," << A.B.cols()+1 << "~" << A.B.cols()+A.C.cols() << "]] := [" << A.C.name() << "]";
@@ -2610,13 +2683,13 @@ FermatArray System::putTogether(const TriangleBlockMatrix &A) const {
         strm.str("");
         strm.clear();
         strm << "[" << B.name() << "[" << A.A.rows()+A.C.rows()+1 << "~" << A.A.rows()+A.C.rows()+A.E.rows() << "," << A.D.cols()+1 << "~" << A.D.cols()+A.E.cols() << "]] := [" << A.E.name() << "]";
-    
+
         (*fermat)(strm.str());
-        
+
         strm.str("");
         strm.clear();
         strm << "[" << B.name() << "[" << A.A.rows()+A.C.rows()+1 << "~" << A.A.rows()+A.C.rows()+A.F.rows() << "," << A.D.cols()+A.E.cols()+1 << "~" << A.D.cols()+A.E.cols()+A.F.cols() << "]] := [" << A.F.name() << "]";
-    
+
         (*fermat)(strm.str());
     }
 
@@ -2637,7 +2710,7 @@ void System::printEigenvalues() {
     int width=0;
 
     for (auto &s : singularities) {
-        int len = pstr(s.first).size(); 
+        int len = pstr(s.first).size();
         if (len > width) width = len;
     }
 
@@ -2655,27 +2728,36 @@ void System::printEigenvalues() {
 
         eigen(xj);
 
+        string epstr = shift.str();
+        if (epstr == "0") {
+            epstr = "ep";
+        } else if (epstr.front() == '-') {
+            epstr = "(ep+"+string(epstr,1)+")";
+        } else {
+            epstr = "(ep-"+epstr+")";
+        }
+
         for (auto &ev0 : eigenvalues[xj]) {
             eigen_t ev = ev0.first;
             int mult = ev0.second;
 
             if (ev.u == 0) {
                 stringstream strm;
-                
+
                 if (ev.v > 1 || ev.v < -1) {
-                    strm << ev.v << "*ep";
+                    strm << ev.v << "*" << epstr;
                 } else if (ev.v == 1) {
-                    strm << "ep";
+                    strm << epstr;
                 } else if (ev.v == -1) {
-                    strm << "-ep";
+                    strm << "-" << epstr;
                 } else {
                     strm << 0;
                 }
 
-                cout << setw(10) << right << strm.str() << ":" << mult << "\t";
+                cout << setw(8+epstr.size()) << right << strm.str() << ":" << mult << "\t";
             }
         }
-        
+
         for (auto &ev0 : eigenvalues[xj]) {
             eigen_t ev = ev0.first;
             int mult = ev0.second;
@@ -2684,19 +2766,19 @@ void System::printEigenvalues() {
                 stringstream strm;
 
                 if (ev.u != 0 && ev.v > 1) {
-                    strm << ev.u << "+" << ev.v << "*ep";
+                    strm << ev.u << "+" << ev.v << "*" << epstr;
                 } else if (ev.u != 0 && ev.v == 1) {
-                    strm << ev.u << "+ep";
+                    strm << ev.u << "+" << epstr;
                 } else if (ev.u != 0 && ev.v < -1) {
-                    strm << ev.u << ev.v << "*ep";
+                    strm << ev.u << ev.v << "*" << epstr;
                 } else if (ev.u != 0 && ev.v == -1) {
-                    strm << ev.u << "-ep";
+                    strm << ev.u << "-" << epstr;
                 } else if (ev.u != 0 && ev.v == 0) {
                     strm << ev.u;
-                } 
+                }
 
-                cout << setw(10) << right << strm.str() << ":" << mult << "\t";
-            }                
+                cout << setw(8+epstr.size()) << right << strm.str() << ":" << mult << "\t";
+            }
         }
         cout << endl;
     }
@@ -2713,21 +2795,21 @@ string System::pstr(const FermatExpression &x) const {
 FermatExpression System::powi(int b, int e) const {
     stringstream strm;
     strm << "(" << b << ")^(" << e << ")";
-    
+
     return FermatExpression(fermat,strm.str());
 }
 
 FermatExpression System::pow(const FermatExpression &b, int e) const {
     stringstream strm;
     strm << "(" << b.name() << ")^(" << e << ")";
-    
+
     return FermatExpression(fermat,strm.str());
 }
 
 FermatExpression System::binomi(int n, int k) const {
     stringstream strm;
     strm << "Bin(" << n << "," << k << ")";
-    
+
     return FermatExpression(fermat,strm.str());
 }
 

@@ -41,6 +41,7 @@ typedef struct {
         Export,
         Write,
         Block,
+        Shift,
         Analyze,
         Eigenvalues,
         Fuchsify,
@@ -56,7 +57,7 @@ typedef struct {
         JordanEp,
         Dyson
     } type;
-    
+
     string name;
 
     bool append;
@@ -66,6 +67,7 @@ typedef struct {
     int mu;
     string sing;
     int order;
+    string shift;
     Dyson::pltype_t pltype;
     Dyson::format_t format;
 } Job;
@@ -189,8 +191,13 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 delete oldsystem;
 
                 system->transformationQueue()->setfile(filename,true);
-                
+
                 cout << "block [" << it->start << "," << it->end << "] activated." << endl;
+                break;
+            }
+            case Job::Shift: {
+                cout << "shifting ep by " << it->shift << "." << endl;
+                system->setshift(FermatExpression(fermat,it->shift));
                 break;
             }
             case Job::Analyze:
@@ -243,7 +250,7 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 cout << endl << "left-ranks" << endl << "----------" << endl;
                 system->leftranks();
                 cout << endl;
-                break; 
+                break;
             case Job::LeftReduce: {
                 FermatExpression xj;
 
@@ -373,9 +380,10 @@ static void usage(string progname) {
     cerr << setw(60) << "   --queue <filename>"                                      << "Use <filename> as transformation queue (overwrite mode)." << endl;
     cerr << setw(60) << "   --queue-append <filename>"                               << "Use <filename> as transformation queue (append mode)." << endl;
     cerr << setw(60) << "   --load-queue <filename>"                                 << "Load transformation queue from <filename>." << endl;
-    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl; 
+    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl;
     cerr << setw(60) << "   --export <filename>"                                     << "Export transformation matrix as Mathematica(R) file <filename>." << endl;
     cerr << setw(60) << "   --block <start> <end>"                                   << "Activate block from <start> to <end>." << endl;
+    cerr << setw(60) << "   --shift <shift>"                                         << "Set a shift of ep by <shift>." << endl;
     cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
     cerr << setw(60) << "   --eigenvalues"                                           << "Print eigenvalues." << endl;
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
@@ -405,14 +413,14 @@ static int cmdline(string progname, vector<string> parameters) {
     vector<Job> jobs;
 
     if (parameters.empty()) usage(progname);
-    
+
     if (getenv("FERMAT")) {
         fermatpath = getenv("FERMAT");
     }
 
     for (auto it = parameters.begin(); it != parameters.end(); ++it) {
         Job job;
-        
+
         if (it->size() < 2) usage(progname);
 
         job.name = *it;
@@ -434,11 +442,11 @@ static int cmdline(string progname, vector<string> parameters) {
 
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
-            
+
             jobs.push_back(job);
         } else if (*it == "--load") {
             job.type = Job::Load;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
             if (++it == parameters.end()) usage(progname);
@@ -450,7 +458,7 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--write") {
             job.type = Job::Write;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -458,7 +466,7 @@ static int cmdline(string progname, vector<string> parameters) {
         } else if (*it == "--queue") {
             job.type = Job::Queue;
             job.append = false;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -473,7 +481,7 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--load-queue") {
             job.type = Job::LoadQueue;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -497,6 +505,13 @@ static int cmdline(string progname, vector<string> parameters) {
 
             if (++it == parameters.end()) usage(progname);
             job.end = atoi(it->c_str());
+
+            jobs.push_back(job);
+        } else if (*it == "--shift") {
+            job.type = Job::Shift;
+
+            if (++it == parameters.end()) usage(progname);
+            job.shift = *it;
 
             jobs.push_back(job);
         } else if (*it == "--analyze") {
@@ -528,7 +543,7 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--factorep-at") {
             job.type = Job::FactorEpAt;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.mu = atoi(it->c_str());
 
@@ -573,16 +588,16 @@ static int cmdline(string progname, vector<string> parameters) {
             string type,format;
 
             job.type = Job::Dyson;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
-        
+
             if (++it == parameters.end()) usage(progname);
             job.order = atoi(it->c_str());
 
             if (++it == parameters.end()) usage(progname);
             type = *it;
-            
+
             if (++it == parameters.end()) usage(progname);
             format = *it;
 
@@ -595,7 +610,7 @@ static int cmdline(string progname, vector<string> parameters) {
             } else {
                 usage(progname);
             }
-           
+
             if (format == "mma") {
                 job.format = Dyson::fMma;
             } else if (format == "form") {
@@ -613,7 +628,7 @@ static int cmdline(string progname, vector<string> parameters) {
 
     Fermat fermat(fermatpath,verbose);
     fermat("&(_o=0)");
-  
+
     for (auto &s : symbols) {
         fermat.addSymbol(s);
     }
