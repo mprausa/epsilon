@@ -2744,12 +2744,12 @@ void System::printEigenvalues() {
             if (ev.u == 0) {
                 stringstream strm;
 
-                if (ev.v > 1 || ev.v < -1) {
-                    strm << ev.v << "*" << epstr;
-                } else if (ev.v == 1) {
+                if (ev.v == 1) {
                     strm << epstr;
                 } else if (ev.v == -1) {
                     strm << "-" << epstr;
+                } else if (ev.v != 0) {
+                    strm << ev.v << "*" << epstr;
                 } else {
                     strm << 0;
                 }
@@ -2765,14 +2765,14 @@ void System::printEigenvalues() {
             if (ev.u != 0) {
                 stringstream strm;
 
-                if (ev.u != 0 && ev.v > 1) {
-                    strm << ev.u << "+" << ev.v << "*" << epstr;
-                } else if (ev.u != 0 && ev.v == 1) {
+                if (ev.u != 0 && ev.v == 1) {
                     strm << ev.u << "+" << epstr;
-                } else if (ev.u != 0 && ev.v < -1) {
-                    strm << ev.u << ev.v << "*" << epstr;
                 } else if (ev.u != 0 && ev.v == -1) {
                     strm << ev.u << "-" << epstr;
+                } else if (ev.u != 0 && ev.v > 0) {
+                    strm << ev.u << "+" << ev.v << "*" << epstr;
+                } else if (ev.u != 0 && ev.v < 0) {
+                    strm << ev.u << ev.v << "*" << epstr;
                 } else if (ev.u != 0 && ev.v == 0) {
                     strm << ev.u;
                 }
