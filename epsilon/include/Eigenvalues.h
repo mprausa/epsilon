@@ -2,8 +2,8 @@
 
 /*
  *  include/Eigenvalues.h
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@
 
 #include <map>
 #include <FermatArray.h>
-#include <HalfInteger.h>
+#include <Fraction.h>
 
 typedef struct _eigen {
-    HalfInteger u;
-    HalfInteger v;
-                
+    Fraction u;
+    Fraction v;
+
     bool operator<(const struct _eigen &other) const {
         return (u < other.u) || (u == other.u && v < other.v);
     }
@@ -37,8 +37,7 @@ typedef struct _eigen {
 
 typedef std::map<eigen_t,int> eigenvalues_t;
 
-extern bool halfEV;
-
+extern int EVdenom;
 eigenvalues_t findEigenvalues(const FermatArray &array, int max);
 
 #endif //__EIGENVALUES_H
