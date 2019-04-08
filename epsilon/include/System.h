@@ -2,8 +2,8 @@
 
 /*
  *  include/System.h
- * 
- *  Copyright (C) 2016, 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2017 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,11 +38,11 @@ class System {
         typedef struct _sing {
             FermatExpression point;
             int rank;
-            
+
             bool operator<(const _sing &other) const {
                 return (point < other.point) || (point == other.point && rank < other.rank);
             }
-        } sing_t; 
+        } sing_t;
 
         typedef struct {
             // ( A 0 0 )
@@ -61,7 +61,7 @@ class System {
 
         std::map<sing_t,TriangleBlockMatrix> _A;
         std::map<int,TriangleBlockMatrix> _B;
-       
+
         struct singLess {
             bool operator() (const FermatExpression &a, const FermatExpression &b) const;
         };
@@ -79,7 +79,7 @@ class System {
         bool echfer;
     public:
         System(Fermat *fermat, bool echfer);
-        System(Fermat *fermat, std::string filename, int start, int end, bool echfer); 
+        System(Fermat *fermat, std::string filename, int start, int end, bool echfer);
         System(const System &orig, int start, int end);
         System(const System &orig, const FermatArray &left, const FermatArray &right);
         System(const System &orig, int ep);
@@ -96,6 +96,7 @@ class System {
         void fuchsify();
         void fuchsify(const FermatExpression &x1);
         void normalize();
+        void normalize(const FermatExpression &x1);
         void factorep();
         void factorep(int mu);
         void leftranks();
@@ -105,11 +106,11 @@ class System {
         void tjordan(const FermatExpression &xj, bool divep);
 
         void balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);
-        void transform(const FermatArray &T); 
+        void transform(const FermatArray &T);
         void lefttransformFull(const FermatArray &G, const FermatExpression &x1, int k);
 
         std::map<FermatExpression,FermatArray> exportFuchs() const;
-        
+
         void printEigenvalues();
     private:
         bool projectorQ(const FermatExpression &x1, const FermatExpression &x2, FermatArray &Q);
@@ -117,7 +118,16 @@ class System {
 
         int reduceL0(FermatArray L0, int k, const FermatExpression &x1, std::set<int> &S, FermatArray &Delta);
         bool invariantSubspace(const FermatExpression &x2, const FermatArray &Uk, FermatArray &Vk);
-        bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0);
+
+        bool findBalance(const std::map<FermatExpression,poincareRank,singLess> &left,
+                         const std::map<FermatExpression,poincareRank,singLess> &right,
+                         FermatExpression &x1, FermatExpression &x2, FermatArray &P,
+                         bool lneg, bool rpos);
+
+        bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P);
+        bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, bool normx0);
+        bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, const FermatExpression &xr);
+
         FermatExpression regularPoint();
 
         void balance_x1_x2(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);
@@ -145,6 +155,8 @@ class System {
         FermatExpression powi(int b, int e) const;
         FermatExpression pow(const FermatExpression &b, int e) const;
         FermatExpression binomi(int n, int k) const;
+
+        std::map<FermatExpression,poincareRank,singLess> singularitiesC() const;
 
         void printSingularities() const;
 };

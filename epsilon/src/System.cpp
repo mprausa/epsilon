@@ -698,9 +698,9 @@ void System::normalize() {
         FermatExpression x1,x2;
         FermatArray P;
 
-        if (findBalance(x1,x2,P,FermatExpression())) {
+        if (findBalance(x1,x2,P)) {
             cout << "mutual balance [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
-        } else if (findBalance(x1,x2,P,x0)) {
+        } else if (findBalance(x1,x2,P,x0,false)) {
             cout << "balance [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
         } else {
             bool normalized=true;
@@ -717,8 +717,53 @@ void System::normalize() {
 
             FermatExpression xr = regularPoint();
 
-            if (!findBalance(x1,x2,P,xr)) {
+            if (!findBalance(x1,x2,P,xr,false)) {
                 throw invalid_argument("unable to normalize system.");
+            }
+            cout << "balance with regular point [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
+        }
+
+        if (shift.str() != "0") {
+            P = P.subst("ep",FermatExpression(fermat,"ep") - shift);
+        }
+
+        balance(P,x1,x2);
+        printEigenvalues();
+    }
+}
+
+void System::normalize(const FermatExpression &x0) {
+    for (auto it=singularities.begin(); it != singularities.end(); ++it) {
+        if (it->second.rankC > 0) {
+            throw invalid_argument("not in fuchsian form");
+        }
+    }
+
+    printEigenvalues();
+
+    for(;;) {
+        FermatExpression x1,x2;
+        FermatArray P;
+
+        if (findBalance(x1,x2,P,x0,true)) {
+            cout << "balance [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
+        } else {
+            bool normalized=true;
+            eigen(x0);
+
+            for (auto &e : eigenvalues[x0]) {
+                if (e.first.u < 0 || e.first.u >= 1) {
+                    normalized = false;
+                    break;
+                }
+            }
+
+            if (normalized) break;
+
+            FermatExpression xr = regularPoint();
+
+            if (!findBalance(x1,x2,P,x0,xr)) {
+                throw invalid_argument("unable to normalize system @ x="+x0.str()+".");
             }
             cout << "balance with regular point [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
         }
@@ -1515,6 +1560,109 @@ bool System::invariantSubspace(const FermatExpression &x2, const FermatArray &Uk
     return false;
 }
 
+bool System::findBalance(const map<FermatExpression,poincareRank,singLess> &left,
+                         const map<FermatExpression,poincareRank,singLess> &right,
+                         FermatExpression &x1, FermatExpression &x2, FermatArray &P,
+                         bool lneg, bool rpos) {
+
+    size_t len=0;
+
+    for (auto &l : left) {
+        FermatArray A0 = A(l.first,0).C;
+
+        if (shift.str() != "0") {
+            A0 = A0.subst("ep",FermatExpression(fermat,"ep") + shift);
+        }
+
+        eigen(l.first);
+
+        for (auto &e1 : eigenvalues[l.first]) {
+            if (lneg && e1.first.u >= 0) continue;
+
+            vector<FermatArray> vectors1;
+            Eigenvectors(A0,e1.first,vectors1);
+            for (auto &r : right) {
+                if (l.first == r.first) continue;
+
+                FermatArray B0 = A(r.first,0).C.transpose();
+                if (shift.str() != "0") {
+                    B0 = B0.subst("ep",FermatExpression(fermat,"ep") + shift);
+                }
+                eigen(r.first);
+
+                for (auto &e2 : eigenvalues[r.first]) {
+                    if (rpos && e2.first.u < 1) continue;
+
+                    vector<FermatArray> vectors2;
+                    Eigenvectors(B0,e2.first,vectors2);
+
+                    for (auto &v1 : vectors1) {
+                        for (auto &v2 : vectors2) {
+                            FermatExpression expr = (v1.transpose() * v2)(1,1);
+
+                            if (expr.str() == "0") continue;
+
+                            FermatArray P0 = v1 * v2.transpose() / expr;
+                            size_t len0 = P0.str().size();
+
+                            if (!len || len0 < len) {
+                                len = len0;
+                                P = P0;
+                                x1 = l.first;
+                                x2 = r.first;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return len>0;
+}
+
+bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P) {
+    auto sings = singularitiesC();
+    return findBalance(sings,sings,x1,x2,P,true,true);
+}
+
+bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, bool normx0) {
+    map<FermatExpression,poincareRank,singLess> sings1;
+
+    if (singularities.count(x0)) {
+        sings1[x0] = singularities[x0];
+    } else {
+        sings1[x0].rank = sings1[x0].rankC = -1;
+    }
+
+    auto sings2 = singularitiesC();
+    sings2.erase(x0);
+
+    return findBalance(sings1,sings2,x1,x2,P,normx0,!normx0) ||
+           findBalance(sings2,sings1,x1,x2,P,!normx0,normx0);
+}
+
+bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, const FermatExpression &xr) {
+    map<FermatExpression,poincareRank,singLess> sings1,sings2;
+
+    if (singularities.count(x0)) {
+        sings1[x0] = singularities[x0];
+    } else {
+        sings1[x0].rank = sings1[x0].rankC = -1;
+    }
+
+    if (singularities.count(xr)) {
+        sings2[xr] = singularities[xr];
+    } else {
+        sings2[xr].rank = sings2[xr].rankC = -1;
+    }
+
+    return findBalance(sings1,sings2,x1,x2,P,true,false) ||
+           findBalance(sings2,sings1,x1,x2,P,false,true);
+}
+
+
+#if 0
 bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0) {
     map<FermatExpression,poincareRank,singLess> left,right;
     bool second=false;
@@ -1532,7 +1680,14 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
         left = right = singularities;
     }
 
-    //TODO: parallelize
+    if (x1.fer()) {
+        if (singularities.count(x1)) {
+            right[x1] = singularities[x1];
+        } else {
+            right[x1].rank = right[x1].rankC = -1;
+        }
+    }
+
     do {
         for (auto &l : left) {
             if (x0.fer() && second && l.first == x0) continue;
@@ -1599,6 +1754,7 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
 
     return len>0;
 }
+#endif
 
 void System::balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2) {
     if (x1 == infinity) {
@@ -2694,6 +2850,18 @@ FermatArray System::putTogether(const TriangleBlockMatrix &A) const {
     }
 
     return B;
+}
+
+map<FermatExpression,System::poincareRank,System::singLess> System::singularitiesC() const {
+    map<FermatExpression,poincareRank,singLess> sings;
+
+    for (auto &s : singularities) {
+        if (s.second.rankC >= 0) {
+            sings[s.first] = s.second;
+        }
+    }
+
+    return sings;
 }
 
 void System::printSingularities() const {

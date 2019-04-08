@@ -47,6 +47,7 @@ typedef struct {
         Fuchsify,
         FuchsifyAt,
         Normalize,
+        NormalizeAt,
         FactorEp,
         FactorEpAt,
         LeftRanks,
@@ -236,6 +237,22 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 system->normalize();
                 cout << endl;
                 break;
+            case Job::NormalizeAt: {
+                FermatExpression xj;
+
+                cout << endl << "normalize @ " << it->sing << endl << "---------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->normalize(xj);
+
+                cout << endl;
+                break;
+            }
             case Job::FactorEp:
                 cout << endl << "factor ep" << endl << "---------" << endl;
                 system->factorep();
@@ -390,6 +407,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
     cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
     cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
+    cerr << setw(60) << "   --normalize-at <sing>"                                   << "Normalize eigenvalues at the singularity <sing>." << endl;
     cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
     cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
     cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
@@ -539,6 +557,13 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--normalize") {
             job.type = Job::Normalize;
+
+            jobs.push_back(job);
+        } else if (*it == "--normalize-at") {
+            job.type = Job::NormalizeAt;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
 
             jobs.push_back(job);
         } else if (*it == "--factorep") {
