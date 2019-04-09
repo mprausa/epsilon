@@ -3,7 +3,7 @@
 /*
  *  include/System.h
  *
- *  Copyright (C) 2016, 2017 Mario Prausa
+ *  Copyright (C) 2016 - 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,6 +103,7 @@ class System {
         int leftreduce(const FermatExpression &xj);
         void leftfuchsify();
         void leftfuchsify(const FermatExpression &xj);
+        void leftrmpoles(const FermatExpression &xj);
         void tjordan(const FermatExpression &xj, bool divep);
 
         void balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);

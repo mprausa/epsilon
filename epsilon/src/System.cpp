@@ -1247,6 +1247,39 @@ void System::leftfuchsify(const FermatExpression &xj) {
     }
 }
 
+void System::leftrmpoles(const FermatExpression &xj) {
+    if (!singularities.count(xj)) {
+        cout << "no singularity at " << pstr(xj) << endl;
+        return;
+    }
+
+    int rk = singularities[xj].rank;
+    int n=0;
+
+    for (int k=0; k<=rk; ++k) {
+        FermatArray B = A(xj,k).B;
+        for (int rows=B.rows(), cols=B.cols(), r=1; r<=rows; ++r) {
+            for (int c=1; c<=cols; ++c) {
+                int n0 = B(r,c).denom().codeg("ep");
+                if (n0 > n) n = n0;
+            }
+        }
+    }
+
+    if (n == 0) {
+        cout << "no poles in ep" << endl;
+        return;
+    }
+
+    cout << "removing poles in ep of order " << n << endl;
+
+    FermatArray T(fermat,nullMatrix.C.rows(),nullMatrix.C.cols());
+    T.assign("ep^"+to_string(-n)+"*[1] + 0");
+
+
+    transform(T);
+}
+
 void System::tjordan(const FermatExpression &xj, bool divep) {
     if (!singularities.count(xj)) {
         cout << "no singularity at " << xj.str() << endl;
