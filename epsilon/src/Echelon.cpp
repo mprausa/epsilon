@@ -2,8 +2,8 @@
 
 /*
  *  src/Echelon.cpp
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include <Echelon.h>
 #include <climits>
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <set>
@@ -45,11 +46,11 @@ EchelonBase::Row EchelonBase::Row::operator-(const EchelonBase::Row &other) cons
         } else {
             res.set(it1->first,it1->second);
         }
-    }        
+    }
 
     for (; it2 != other.data.end(); ++it2) {
         res.set(it2->first,-it2->second);
-    }        
+    }
 
     return res;
 }
@@ -58,7 +59,7 @@ EchelonBase::Row EchelonBase::Row::operator* (const FermatExpression &f) const {
     EchelonBase::Row res(fermat);
 
     if (f.str() == "0") return res;
-    
+
     for (auto &e : data) {
         res.set(e.first,e.second*f);
     }
@@ -92,7 +93,7 @@ FermatExpression EchelonBase::Row::operator[] (int c) const {
 
     return FermatExpression(fermat,"0");
 }
- 
+
 bool EchelonBase::Row::empty() const {
     return data.empty();
 }
@@ -178,13 +179,13 @@ EchelonBase::Iterator &EchelonBase::Iterator::operator++() {
         valid = false;
     }
     return *this;
-}    
+}
 
 EchelonBase::Iterator EchelonBase::Iterator::operator++(int) {
     Iterator tmp(*this);
     operator++();
     return tmp;
-}    
+}
 
 bool EchelonBase::Iterator::operator==(const EchelonBase::Iterator &other) const {
     if (rows) {
@@ -208,11 +209,11 @@ EchelonBase::Row &EchelonBase::Iterator::operator*() {
             row.clear();
             for (int c=1; c<=array->cols(); ++c) {  //TODO: this could be optimized with sparse access loops
                 row.set(c,(*array)(rownum,c));
-            } 
+            }
             valid = true;
         }
         return row;
-    }        
+    }
 }
 
 Echelon::Echelon(Fermat *fermat) {
@@ -223,7 +224,7 @@ void Echelon::set(const Row &row) {
     if (row.empty()) return;
     rows[row.col1()].push_back(row);
 }
-        
+
 void Echelon::set(const std::map<int,FermatExpression> &m) {
     Row row(fermat);
     for (auto &e : m) {
@@ -291,7 +292,7 @@ int Echelon::run() {
     int rk = rows.size();
     cnt = 0;
     prog=50;
-    
+
     cout << "back substitution:    " << flush;
 
     for (auto it = rows.rbegin(); it != rows.rend(); ++it) {
@@ -331,9 +332,9 @@ int Echelon::run() {
 int Echelon::findPivot(const vector<Row> &rows) const {
     size_t min=SIZE_MAX;
     int pivot=-1;
-   
+
     if (rows.size() == 1) return 0;
- 
+
     for (int n=0; n<rows.size(); ++n) {
         size_t s = 0;
         for (auto &e : rows[n]) {
@@ -346,7 +347,7 @@ int Echelon::findPivot(const vector<Row> &rows) const {
         }
     }
 
-    return pivot; 
+    return pivot;
 }
 
 void Echelon::normalize(vector<Row> &rows) {
@@ -411,6 +412,10 @@ int EchelonFermat::run() {
     return rk;
 }
 
+void EchelonFermat::print(ostream &os) const {
+    os << array.sstr();
+}
+
 EchelonBase::Iterator EchelonFermat::begin() {
     return Iterator(&array,1);
 }
@@ -419,7 +424,63 @@ EchelonBase::Iterator EchelonFermat::end() {
     return Iterator(&array,pos);
 }
 
-void EchelonFermat::print(ostream &os) const {
+EchelonCustom::EchelonCustom(Fermat *fermat, const string &exe, int rows, int cols) {
+    this->fermat = fermat;
+    this->exe = exe;
+
+    array = FermatArray(fermat,rows,cols,true);
+    pos = 1;
+}
+
+void EchelonCustom::set(const Row &row) {
+    if (row.empty()) return;
+    for (auto &e : row) {
+        array.set(pos,e.first,e.second);
+    }
+    ++pos;
+}
+
+void EchelonCustom::set(const map<int,FermatExpression> &m) {
+    Row row(fermat);
+    for (auto &e : m) {
+        row.set(e.first,e.second);
+    }
+    set(row);
+}
+
+int EchelonCustom::run() {
+    redi::pstream strm(exe,redi::pstream::pstdin|redi::pstream::pstdout);
+    if (!strm.is_open()) {
+        throw invalid_argument("unable to open "+exe);
+    }
+    strm << array.str() << endl;
+    string line;
+    int rk=0;
+    for (int cnt=0; getline(strm,line); ++cnt) {
+        switch(cnt) {
+            case 0:
+                array = FermatArray(fermat,line);
+                break;
+            case 1:
+                rk = stoi(line);
+                break;
+            default:
+                throw invalid_argument("too much output.");
+        }
+    }
+    strm.close();
+    return rk;
+}
+
+EchelonBase::Iterator EchelonCustom::begin() {
+    return Iterator(&array,1);
+}
+
+EchelonBase::Iterator EchelonCustom::end() {
+    return Iterator(&array,pos);
+}
+
+void EchelonCustom::print(ostream &os) const {
     os << array.sstr();
 }
 

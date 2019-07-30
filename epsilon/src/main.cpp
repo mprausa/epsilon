@@ -142,8 +142,8 @@ static void sourceFermatFunctions(Fermat *fermat) {
     rmdir(tmpdir.c_str());
 }
 
-static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer) {
-    System *system = new System(fermat,echfer);
+static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer, string echexe) {
+    System *system = new System(fermat,echfer,echexe);
 
     for (auto it = jobs.begin(); it != jobs.end(); ++it) {
         struct timespec start,end;
@@ -159,7 +159,7 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 break;
             case Job::Load:
                 if (system) delete system;
-                system = new System(fermat, it->filename, it->start, it->end, echfer);
+                system = new System(fermat, it->filename, it->start, it->end, echfer, echexe);
                 cout << "loaded system from " << it->filename << "." << endl;
                 cout << "active block is [" << it->start << "," << it->end << "]." << endl;
                 break;
@@ -404,6 +404,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
     cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
     cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
+    cerr << setw(60) << "   --echolon-custom <exe>"                                  << "Use a custom executable <exe> to solve LSEs." << endl;
     cerr << setw(60) << "   --ev-denom <int>"                                        << "Allow eigenvalues of the form u+v*ep, where u,v are rational numbers with denominator <int>." << endl;
     cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v (same as --ev-denom 2)." << endl;
     cerr << endl;
@@ -446,6 +447,7 @@ static int cmdline(string progname, vector<string> parameters) {
     vector<string> symbols;
     bool verbose = false;
     bool timings = false;
+    string echexe;
     bool echfer = false;
     vector<Job> jobs;
 
@@ -469,6 +471,9 @@ static int cmdline(string progname, vector<string> parameters) {
             timings = true;
         } else if (*it == "--echelon-fermat") {
             echfer = true;
+        } else if (*it == "--echelon-custom") {
+            if (++it == parameters.end()) usage(progname);
+            echexe = *it;
         } else if (*it == "--ev-denom") {
             if (++it == parameters.end()) usage(progname);
             EVdenom = stoi(*it);
@@ -699,7 +704,7 @@ static int cmdline(string progname, vector<string> parameters) {
         clock_gettime(CLOCK_MONOTONIC_COARSE,&start);
     }
 
-    handleJobs(&fermat, jobs, timings, echfer);
+    handleJobs(&fermat, jobs, timings, echfer, echexe);
 
     if (timings) {
         timespec diff;

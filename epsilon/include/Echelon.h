@@ -2,8 +2,8 @@
 
 /*
  *  include/Echelon.h
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ class EchelonBase {
 
         virtual void set(const Row &row) = 0;
         virtual void set(const std::map<int,FermatExpression> &m) = 0;
-        virtual int run() = 0; 
+        virtual int run() = 0;
 
         virtual Iterator begin() = 0;
         virtual Iterator end() = 0;
@@ -101,7 +101,7 @@ class Echelon : public EchelonBase {
 
         virtual Iterator begin();
         virtual Iterator end();
-        
+
         virtual void print(std::ostream &os) const;
     private:
         int findPivot(const std::vector<Row> &rows) const;
@@ -115,7 +115,7 @@ class EchelonFermat : public EchelonBase {
         int pos;
     public:
         EchelonFermat(Fermat *fermat, int rows, int cols);
-    
+
         virtual void set(const Row &row);
         virtual void set(const std::map<int,FermatExpression> &m);
         virtual int run();
@@ -125,7 +125,26 @@ class EchelonFermat : public EchelonBase {
 
         virtual void print(std::ostream &os) const;
 };
-    	
+
+class EchelonCustom : public EchelonBase {
+    protected:
+        Fermat *fermat;
+        FermatArray array;
+        std::string exe;
+        int pos;
+    public:
+        EchelonCustom(Fermat *fermat, const std::string &exe, int rows, int cols);
+
+        virtual void set(const Row &row);
+        virtual void set(const std::map<int,FermatExpression> &m);
+        virtual int run();
+
+        virtual Iterator begin();
+        virtual Iterator end();
+
+        virtual void print(std::ostream &os) const;
+};
+
 std::ostream &operator<<(std::ostream &os, const EchelonBase &e);
 
 #endif //__ECHELON_H

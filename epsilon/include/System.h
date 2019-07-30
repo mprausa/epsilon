@@ -77,9 +77,10 @@ class System {
 
         TransformationQueue tqueue;
         bool echfer;
+        std::string echexe;
     public:
-        System(Fermat *fermat, bool echfer);
-        System(Fermat *fermat, std::string filename, int start, int end, bool echfer);
+        System(Fermat *fermat, bool echfer, std::string echexe);
+        System(Fermat *fermat, std::string filename, int start, int end, bool echfer, std::string echexe);
         System(const System &orig, int start, int end);
         System(const System &orig, const FermatArray &left, const FermatArray &right);
         System(const System &orig, int ep);

@@ -68,19 +68,21 @@ bool System::singLess::operator() (const FermatExpression &a, const FermatExpres
     return as < bs;
 }
 
-System::System(Fermat *fermat, bool echfer) : tqueue(fermat) {
+System::System(Fermat *fermat, bool echfer, string echexe) : tqueue(fermat) {
     this->fermat = fermat;
     this->echfer = echfer;
+    this->echexe = echexe;
     this->shift = FermatExpression(fermat,"0");
 }
 
-System::System(Fermat *fermat, string filename, int start, int end, bool echfer) : tqueue(fermat) {
+System::System(Fermat *fermat, string filename, int start, int end, bool echfer, string echexe) : tqueue(fermat) {
 	string str;
 	ifstream file(filename);
     int r;
 
     this->fermat = fermat;
     this->echfer = echfer;
+    this->echexe = echexe;
     this->shift = FermatExpression(fermat,"0");
 
     if (!file.is_open()) {
@@ -224,6 +226,7 @@ System::System(const System &orig, int start, int end) : tqueue(orig.tqueue) {
 
     fermat = orig.fermat;
     echfer = orig.echfer;
+    echexe = orig.echexe;
     shift = orig.shift;
 
     kmaxC = kmax = -1;
@@ -334,6 +337,7 @@ System::System(const System &orig, const FermatArray &left, const FermatArray &r
 
     fermat = orig.fermat;
     echfer = orig.echfer;
+    echexe = orig.echexe;
     shift = orig.shift;
     nullMatrix = orig.nullMatrix;
     singularities = orig.singularities;
@@ -387,6 +391,7 @@ System::System(const System &orig, int ep) : tqueue(orig.fermat) {
 
     fermat = orig.fermat;
     echfer = orig.echfer;
+    echexe = orig.echexe;
     shift = orig.shift;
     nullMatrix = orig.nullMatrix;
     singularities = orig.singularities;
@@ -792,7 +797,9 @@ void System::factorep() {
 
     EchelonBase *echelon;
 
-    if (echfer) {
+    if (!echexe.empty()) {
+        echelon = new EchelonCustom(fermat,echexe,N*N*singularities.size(),N*N+1);
+    } else if (echfer) {
         echelon = new EchelonFermat(fermat,N*N*singularities.size(),N*N+1);
     } else {
         echelon = new Echelon(fermat);
@@ -952,7 +959,9 @@ void System::factorep(int mu) {
 
     EchelonBase *echelon;
 
-    if (echfer) {
+    if (!echexe.empty()) {
+        echelon = new EchelonCustom(fermat,echexe,N*N*singularities.size(),N*N+1);
+    } else if (echfer) {
         echelon = new EchelonFermat(fermat,N*N*singularities.size(),N*N+1);
     } else {
         echelon = new Echelon(fermat);
@@ -1130,7 +1139,9 @@ int System::leftreduce(const FermatExpression &xj) {
 
     EchelonBase *echelon;
 
-    if (echfer) {
+    if (!echexe.empty()) {
+        echelon = new EchelonCustom(fermat,echexe,B.rows()*B.cols(),B.rows()*B.cols()+2);
+    } else if (echfer) {
         echelon = new EchelonFermat(fermat,B.rows()*B.cols(),B.rows()*B.cols()+2);
     } else {
         echelon = new Echelon(fermat);
