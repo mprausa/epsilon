@@ -2,8 +2,8 @@
 
 /*
  *  src/Eigenvalues.cpp
- * 
- *  Copyright (C) 2016 Mario Prausa 
+ *
+ *  Copyright (C) 2016, 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
 #include <iostream>
 using namespace std;
 
-bool halfEV = false;
+int EVdenom = 1;
 
-static FermatExpression makeExpression(Fermat *fermat, HalfInteger u, HalfInteger v) {
+static FermatExpression makeExpression(Fermat *fermat, Fraction u, Fraction v) {
     stringstream strm;
 
     strm << "t-(" << u << "+" << v << "*ep)";
@@ -35,7 +35,7 @@ static FermatExpression makeExpression(Fermat *fermat, HalfInteger u, HalfIntege
 }
 
 
-static bool checkEV(FermatExpression poly, HalfInteger u, HalfInteger v) {
+static bool checkEV(FermatExpression poly, Fraction u, Fraction v) {
     stringstream strm;
     strm << u << "+" << v << "*ep";
 
@@ -48,60 +48,61 @@ eigenvalues_t findEigenvalues(const FermatArray &array, int max) {
 	FermatExpression poly = array.chPoly();
     Fermat *fermat = array.fer();
 	eigenvalues_t values;
+    Fraction inc(1,EVdenom);
     int ctr=0;
 
-	for (HalfInteger i=0; i<=max; i.inc(halfEV)) {
-		for (HalfInteger j=-i; j<=i; j.inc(halfEV)) {
+	for (Fraction i=0; i<=max; i += inc) {
+		for (Fraction j=-i; j<=i; j += inc) {
 			eigen_t ev;
             if (ctr == array.rows()) return values;
 
 			if (checkEV(poly,i,j)) {
 				ev.u = i;
 				ev.v = j;
-				
+
 				values[ev]++;
                 ++ctr;
 
 				poly = poly/makeExpression(fermat,i,j);
-				
-				j.dec(halfEV);
+
+				j -= inc;
 				continue;
 			}
 			if (i == 0) break;
 			if (checkEV(poly,j,i)) {
 				ev.u = j;
 				ev.v = i;
-				
+
 				values[ev]++;
                 ++ctr;
 
 				poly = poly/makeExpression(fermat,j,i);
-				
-				j.dec(halfEV);
+
+                j -= inc;
 				continue;
 			}
 			if (checkEV(poly,-i,j)) {
 				ev.u = -i;
 				ev.v = j;
-				
+
 				values[ev]++;
                 ++ctr;
 
 				poly = poly/makeExpression(fermat,-i,j);
-				
-				j.dec(halfEV);
+
+                j -= inc;
 				continue;
 			}
 			if (checkEV(poly,j,-i)) {
 				ev.u = j;
 				ev.v = -i;
-				
+
 				values[ev]++;
                 ++ctr;
 
 				poly = poly/makeExpression(fermat,j,-i);
-				
-				j.dec(halfEV);
+
+                j -= inc;
 				continue;
 			}
 

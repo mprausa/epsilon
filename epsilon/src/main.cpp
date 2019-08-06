@@ -2,8 +2,8 @@
 
 /*
  *  src/main.cpp
- * 
- *  Copyright (C) 2016, 2017 Mario Prausa 
+ *
+ *  Copyright (C) 2016 - 2019 Mario Prausa
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,22 +41,25 @@ typedef struct {
         Export,
         Write,
         Block,
+        Shift,
         Analyze,
         Eigenvalues,
         Fuchsify,
         FuchsifyAt,
         Normalize,
+        NormalizeAt,
         FactorEp,
         FactorEpAt,
         LeftRanks,
         LeftReduce,
         LeftFuchsify,
         LeftFuchsifyAt,
+        LeftRmPolesAt,
         Jordan,
         JordanEp,
         Dyson
     } type;
-    
+
     string name;
 
     bool append;
@@ -66,6 +69,7 @@ typedef struct {
     int mu;
     string sing;
     int order;
+    string shift;
     Dyson::pltype_t pltype;
     Dyson::format_t format;
 } Job;
@@ -111,7 +115,6 @@ static void executeFermat(Fermat *fermat, const string &filename) {
 }
 
 static void sourceFermatFunctions(Fermat *fermat) {
-    bool first=true;
     string tmpdir = getenv("TMPDIR")?getenv("TMPDIR"):"/tmp";
     tmpdir += "/epsilonXXXXXX";
 
@@ -126,15 +129,13 @@ static void sourceFermatFunctions(Fermat *fermat) {
         rtrim(line);
         if (line == "") continue;
 
-        if (!first) file << endl;
-        file << line;
-        first=false;
+        file << line << endl;
     }
 
     file.close();
 
     (*fermat)("&(U=0)");
-    (*fermat)("&(R=\'"+tmpdir+"/functions.fer\')"); 
+    (*fermat)("&(R=\'"+tmpdir+"/functions.fer\')");
     (*fermat)("&(U=1)");
 
     unlink((tmpdir+"/functions.fer").c_str());
@@ -192,8 +193,13 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 delete oldsystem;
 
                 system->transformationQueue()->setfile(filename,true);
-                
+
                 cout << "block [" << it->start << "," << it->end << "] activated." << endl;
+                break;
+            }
+            case Job::Shift: {
+                cout << "shifting ep by " << it->shift << "." << endl;
+                system->setshift(FermatExpression(fermat,it->shift));
                 break;
             }
             case Job::Analyze:
@@ -232,6 +238,22 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 system->normalize();
                 cout << endl;
                 break;
+            case Job::NormalizeAt: {
+                FermatExpression xj;
+
+                cout << endl << "normalize @ " << it->sing << endl << "---------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->normalize(xj);
+
+                cout << endl;
+                break;
+            }
             case Job::FactorEp:
                 cout << endl << "factor ep" << endl << "---------" << endl;
                 system->factorep();
@@ -246,7 +268,7 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 cout << endl << "left-ranks" << endl << "----------" << endl;
                 system->leftranks();
                 cout << endl;
-                break; 
+                break;
             case Job::LeftReduce: {
                 FermatExpression xj;
 
@@ -280,6 +302,22 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 }
 
                 system->leftfuchsify(xj);
+
+                cout << endl;
+                break;
+            }
+            case Job::LeftRmPolesAt: {
+                FermatExpression xj;
+
+                cout << endl << "left-rmpoles @ " << it->sing << endl << "------------------" << endl;
+
+                if (it->sing == "inf") {
+                    xj = infinity;
+                } else {
+                    xj = FermatExpression(fermat,it->sing);
+                }
+
+                system->leftrmpoles(xj);
 
                 cout << endl;
                 break;
@@ -366,7 +404,8 @@ static void usage(string progname) {
     cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
     cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
     cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
-    cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v." << endl;
+    cerr << setw(60) << "   --ev-denom <int>"                                        << "Allow eigenvalues of the form u+v*ep, where u,v are rational numbers with denominator <int>." << endl;
+    cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v (same as --ev-denom 2)." << endl;
     cerr << endl;
 
     cerr << "JOBS:" << endl;
@@ -376,20 +415,23 @@ static void usage(string progname) {
     cerr << setw(60) << "   --queue <filename>"                                      << "Use <filename> as transformation queue (overwrite mode)." << endl;
     cerr << setw(60) << "   --queue-append <filename>"                               << "Use <filename> as transformation queue (append mode)." << endl;
     cerr << setw(60) << "   --load-queue <filename>"                                 << "Load transformation queue from <filename>." << endl;
-    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl; 
+    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl;
     cerr << setw(60) << "   --export <filename>"                                     << "Export transformation matrix as Mathematica(R) file <filename>." << endl;
     cerr << setw(60) << "   --block <start> <end>"                                   << "Activate block from <start> to <end>." << endl;
+    cerr << setw(60) << "   --shift <shift>"                                         << "Set a shift of ep by <shift>." << endl;
     cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
     cerr << setw(60) << "   --eigenvalues"                                           << "Print eigenvalues." << endl;
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
     cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
     cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
+    cerr << setw(60) << "   --normalize-at <sing>"                                   << "Normalize eigenvalues at the singularity <sing>." << endl;
     cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
     cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
     cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
     cerr << setw(60) << "   --left-fuchsify-at <sing>"                               << "Reduce Poincare rank of block to the left of the active block to zero." << endl;
     cerr << setw(60) << "   --left-ranks"                                            << "Show Poincare ranks of block to the left of active block." << endl;
     cerr << setw(60) << "   --left-reduce <sing>"                                    << "Reduce Poincare rank of block to the left of active block at singularity <sing> (manual approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --left-rmpoles-at <sing>"                                << "Remove poles in ep of block to the left of active block at singularity <sing>." << endl;
     cerr << setw(60) << "   --jordan <sing>"                                         << "Transform residue at singularity <sing> to jordan normal form." << endl;
     cerr << setw(60) << "   --jordan-ep <sing>"                                      << "Transform residue divided by ep at singularity <sing> to jordan normal form." << endl;
     cerr << setw(60) << "   --dyson <filename> <order> (GPL|HPL|HPLalt) (mma|form)"  << "Write Dyson operator up to order <order> in ep to <filename>." << endl;
@@ -408,14 +450,14 @@ static int cmdline(string progname, vector<string> parameters) {
     vector<Job> jobs;
 
     if (parameters.empty()) usage(progname);
-    
+
     if (getenv("FERMAT")) {
         fermatpath = getenv("FERMAT");
     }
 
     for (auto it = parameters.begin(); it != parameters.end(); ++it) {
         Job job;
-        
+
         if (it->size() < 2) usage(progname);
 
         job.name = *it;
@@ -427,8 +469,11 @@ static int cmdline(string progname, vector<string> parameters) {
             timings = true;
         } else if (*it == "--echelon-fermat") {
             echfer = true;
+        } else if (*it == "--ev-denom") {
+            if (++it == parameters.end()) usage(progname);
+            EVdenom = stoi(*it);
         } else if (*it == "--half-ev") {
-            halfEV = true;
+            EVdenom = 2;
         } else if (*it == "--symbols") {
             if (++it == parameters.end()) usage(progname);
             symbols = parseSymbols(*it);
@@ -437,11 +482,11 @@ static int cmdline(string progname, vector<string> parameters) {
 
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
-            
+
             jobs.push_back(job);
         } else if (*it == "--load") {
             job.type = Job::Load;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
             if (++it == parameters.end()) usage(progname);
@@ -453,7 +498,7 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--write") {
             job.type = Job::Write;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -461,7 +506,7 @@ static int cmdline(string progname, vector<string> parameters) {
         } else if (*it == "--queue") {
             job.type = Job::Queue;
             job.append = false;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -476,7 +521,7 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--load-queue") {
             job.type = Job::LoadQueue;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
 
@@ -502,6 +547,13 @@ static int cmdline(string progname, vector<string> parameters) {
             job.end = atoi(it->c_str());
 
             jobs.push_back(job);
+        } else if (*it == "--shift") {
+            job.type = Job::Shift;
+
+            if (++it == parameters.end()) usage(progname);
+            job.shift = *it;
+
+            jobs.push_back(job);
         } else if (*it == "--analyze") {
             job.type = Job::Analyze;
 
@@ -525,13 +577,20 @@ static int cmdline(string progname, vector<string> parameters) {
             job.type = Job::Normalize;
 
             jobs.push_back(job);
+        } else if (*it == "--normalize-at") {
+            job.type = Job::NormalizeAt;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
+
+            jobs.push_back(job);
         } else if (*it == "--factorep") {
             job.type = Job::FactorEp;
 
             jobs.push_back(job);
         } else if (*it == "--factorep-at") {
             job.type = Job::FactorEpAt;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.mu = atoi(it->c_str());
 
@@ -542,6 +601,13 @@ static int cmdline(string progname, vector<string> parameters) {
             jobs.push_back(job);
         } else if (*it == "--left-reduce") {
             job.type = Job::LeftReduce;
+
+            if (++it == parameters.end()) usage(progname);
+            job.sing = *it;
+
+            jobs.push_back(job);
+        } else if (*it == "--left-rmpoles-at") {
+            job.type = Job::LeftRmPolesAt;
 
             if (++it == parameters.end()) usage(progname);
             job.sing = *it;
@@ -576,16 +642,16 @@ static int cmdline(string progname, vector<string> parameters) {
             string type,format;
 
             job.type = Job::Dyson;
-            
+
             if (++it == parameters.end()) usage(progname);
             job.filename = *it;
-        
+
             if (++it == parameters.end()) usage(progname);
             job.order = atoi(it->c_str());
 
             if (++it == parameters.end()) usage(progname);
             type = *it;
-            
+
             if (++it == parameters.end()) usage(progname);
             format = *it;
 
@@ -598,7 +664,7 @@ static int cmdline(string progname, vector<string> parameters) {
             } else {
                 usage(progname);
             }
-           
+
             if (format == "mma") {
                 job.format = Dyson::fMma;
             } else if (format == "form") {
@@ -616,7 +682,7 @@ static int cmdline(string progname, vector<string> parameters) {
 
     Fermat fermat(fermatpath,verbose);
     fermat("&(_o=0)");
-  
+
     for (auto &s : symbols) {
         fermat.addSymbol(s);
     }
