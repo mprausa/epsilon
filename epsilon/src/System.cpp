@@ -2134,7 +2134,7 @@ FermatExpression System::regularPoint() {
     }
 
     if (!singularities.count(FermatExpression(fermat,"0"))) {
-        return 0;
+        return FermatExpression(fermat,"0");
     }
 
     for (int n=1; n<100; ++n) {
