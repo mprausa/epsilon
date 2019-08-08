@@ -91,6 +91,24 @@ static inline string &trim(string &s) {
     return ltrim(rtrim(s));
 }
 
+static vector<string> split(const string &str) {
+    vector<string> v;
+    string tok="";
+
+    for (auto &c : str) {
+        if (c == ',') {
+            v.push_back(tok);
+            tok = "";
+        } else {
+            tok += c;
+        }
+    }
+    v.push_back(tok);
+
+    return v;
+}
+
+
 static void executeFermat(Fermat *fermat, const string &filename) {
     ifstream file(filename);
 
@@ -239,17 +257,19 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
                 cout << endl;
                 break;
             case Job::NormalizeAt: {
-                FermatExpression xj;
-
                 cout << endl << "normalize @ " << it->sing << endl << "---------------" << endl;
 
-                if (it->sing == "inf") {
-                    xj = infinity;
-                } else {
-                    xj = FermatExpression(fermat,it->sing);
+                vector<FermatExpression> sings;
+
+                for (auto &sing : split(it->sing)) {
+                    if (sing == "inf") {
+                        sings.push_back(infinity);
+                    } else {
+                        sings.push_back(FermatExpression(fermat,sing));
+                    }
                 }
 
-                system->normalize(xj);
+                system->normalize(sings);
 
                 cout << endl;
                 break;
@@ -378,23 +398,6 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
     if (system) delete system;
 }
 
-static vector<string> parseSymbols(const string &str) {
-    vector<string> symbols;
-    string sym="";
-
-    for (auto &c : str) {
-        if (c == ',') {
-            symbols.push_back(sym);
-            sym = "";
-        } else {
-            sym += c;
-        }
-    }
-    symbols.push_back(sym);
-
-    return symbols;
-}
-
 static void usage(string progname) {
     cerr << "Usage: " << progname << " [OPTIONS] JOBS..." << endl << endl;
     cerr << left;
@@ -425,7 +428,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
     cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
     cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
-    cerr << setw(60) << "   --normalize-at <sing>"                                   << "Normalize eigenvalues at the singularity <sing>." << endl;
+    cerr << setw(60) << "   --normalize-at <sings>"                                  << "Normalize eigenvalues at the singularities <sings> (comma separated list)." << endl;
     cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
     cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
     cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
@@ -481,7 +484,7 @@ static int cmdline(string progname, vector<string> parameters) {
             EVdenom = 2;
         } else if (*it == "--symbols") {
             if (++it == parameters.end()) usage(progname);
-            symbols = parseSymbols(*it);
+            symbols = split(*it);
         } else if (*it == "--fermat") {
             job.type = Job::Fermat;
 

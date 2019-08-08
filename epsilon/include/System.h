@@ -97,7 +97,7 @@ class System {
         void fuchsify();
         void fuchsify(const FermatExpression &x1);
         void normalize();
-        void normalize(const FermatExpression &x1);
+        void normalize(const std::vector<FermatExpression> &sings);
         void factorep();
         void factorep(int mu);
         void leftranks();
@@ -128,6 +128,7 @@ class System {
 
         bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P);
         bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, bool normx0);
+        bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const std::map<FermatExpression,poincareRank,singLess> &sings1);
         bool findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0, const FermatExpression &xr);
 
         FermatExpression regularPoint();
