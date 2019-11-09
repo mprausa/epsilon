@@ -737,13 +737,14 @@ void System::normalize() {
     }
 }
 
-void System::normalize(const vector<FermatExpression> &sings) {
+void System::normalize(const vector<FermatExpression> &sings, const vector<FermatExpression> &locked) {
+#if 0
     for (auto it=singularities.begin(); it != singularities.end(); ++it) {
         if (it->second.rankC > 0) {
             throw invalid_argument("not in fuchsian form");
         }
     }
-
+#endif
     map<FermatExpression,poincareRank,singLess> sings1;
 
     for (auto &x0 : sings) {
@@ -762,7 +763,7 @@ void System::normalize(const vector<FermatExpression> &sings) {
 
         if (findBalance(sings1,sings1,x1,x2,P,true,true)) {
             cout << "mutual balance [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
-        } else if (findBalance(x1,x2,P,sings1)) {
+        } else if (findBalance(x1,x2,P,sings1,locked)) {
             cout << "balance [" << pstr(x1) << "," << pstr(x2) << "]" << endl;
         } else {
             bool done = true;
@@ -1704,10 +1705,15 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
            findBalance(sings2,sings1,x1,x2,P,!normx0,normx0);
 }
 
-bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const map<FermatExpression,poincareRank,singLess> &sings1) {
+bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P,
+                         const map<FermatExpression,poincareRank,singLess> &sings1,
+                         const vector<FermatExpression> &locked) {
     auto sings2 = singularitiesC();
     for (auto &sing : sings1) {
         sings2.erase(sing.first);
+    }
+    for (auto &sing : locked) {
+        sings2.erase(sing);
     }
 
     return findBalance(sings1,sings2,x1,x2,P,true,false) ||
@@ -1734,100 +1740,6 @@ bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray
            findBalance(sings2,sings1,x1,x2,P,false,true);
 }
 
-
-#if 0
-bool System::findBalance(FermatExpression &x1, FermatExpression &x2, FermatArray &P, const FermatExpression &x0) {
-    map<FermatExpression,poincareRank,singLess> left,right;
-    bool second=false;
-    size_t len=0;
-
-    if (x0.fer()) {
-        if (singularities.count(x0)) {
-            left[x0] = singularities[x0];
-        } else {
-            left[x0].rank = left[x0].rankC = -1;
-        }
-
-        right = singularities;
-    } else {
-        left = right = singularities;
-    }
-
-    if (x1.fer()) {
-        if (singularities.count(x1)) {
-            right[x1] = singularities[x1];
-        } else {
-            right[x1].rank = right[x1].rankC = -1;
-        }
-    }
-
-    do {
-        for (auto &l : left) {
-            if (x0.fer() && second && l.first == x0) continue;
-
-            FermatArray A0 = A(l.first,0).C;
-
-            if (shift.str() != "0") {
-                A0 = A0.subst("ep",FermatExpression(fermat,"ep") + shift);
-            }
-
-            eigen(l.first);
-
-            for (auto &e1 : eigenvalues[l.first]) {
-                if ((!x0.fer() || second) && e1.first.u >= 0) continue;
-
-                vector<FermatArray> vectors1;
-                Eigenvectors(A0,e1.first,vectors1);
-                for (auto &r : right) {
-                    if (l.first == r.first) continue;
-
-                    FermatArray B0 = A(r.first,0).C.transpose();
-                    if (shift.str() != "0") {
-                        B0 = B0.subst("ep",FermatExpression(fermat,"ep") + shift);
-                    }
-                    eigen(r.first);
-
-                    for (auto &e2 : eigenvalues[r.first]) {
-                        if ((!x0.fer() || !second) && e2.first.u <= 0) continue;
-
-                        vector<FermatArray> vectors2;
-                        Eigenvectors(B0,e2.first,vectors2);
-
-                        for (auto &v1 : vectors1) {
-                            for (auto &v2 : vectors2) {
-                                FermatExpression expr = (v1.transpose() * v2)(1,1);
-
-                                if (expr.str() == "0") continue;
-
-                                FermatArray P0 = v1 * v2.transpose() / expr;
-                                size_t len0 = P0.str().size();
-
-                                if (!len || len0 < len) {
-                                    len = len0;
-                                    P = P0;
-                                    x1 = l.first;
-                                    x2 = r.first;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (x0.fer()) {
-            if (!second) {
-                swap(left,right);
-                second = true;
-            } else {
-                second = false;
-            }
-        }
-    } while(second);
-
-    return len>0;
-}
-#endif
 
 void System::balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2) {
     if (x1 == infinity) {

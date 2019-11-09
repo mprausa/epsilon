@@ -108,6 +108,52 @@ static vector<string> split(const string &str) {
     return v;
 }
 
+static void usage(string progname) {
+    cerr << "Usage: " << progname << " [OPTIONS] JOBS..." << endl << endl;
+    cerr << left;
+
+    cerr << "OPTIONS:" << endl;
+    cerr << setw(60) << "   --verbose"                                               << "Enable verbose output." << endl;
+    cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
+    cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
+    cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
+    cerr << setw(60) << "   --echolon-custom <exe>"                                  << "Use a custom executable <exe> to solve LSEs." << endl;
+    cerr << setw(60) << "   --ev-denom <int>"                                        << "Allow eigenvalues of the form u+v*ep, where u,v are rational numbers with denominator <int>." << endl;
+    cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v (same as --ev-denom 2)." << endl;
+    cerr << endl;
+
+    cerr << "JOBS:" << endl;
+    cerr << setw(60) << "   --fermat <filename>"                                     << "Execute fermat commands from <filename>." << endl;
+    cerr << setw(60) << "   --load <filename> <start> <end>"                         << "Load system from <filename> with an active block from <start> to <end>." << endl;
+    cerr << setw(60) << "   --write <filename>"                                      << "Write system to <filename>." << endl;
+    cerr << setw(60) << "   --queue <filename>"                                      << "Use <filename> as transformation queue (overwrite mode)." << endl;
+    cerr << setw(60) << "   --queue-append <filename>"                               << "Use <filename> as transformation queue (append mode)." << endl;
+    cerr << setw(60) << "   --load-queue <filename>"                                 << "Load transformation queue from <filename>." << endl;
+    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl;
+    cerr << setw(60) << "   --export <filename>"                                     << "Export transformation matrix as Mathematica(R) file <filename>." << endl;
+    cerr << setw(60) << "   --block <start> <end>"                                   << "Activate block from <start> to <end>." << endl;
+    cerr << setw(60) << "   --shift <shift>"                                         << "Set a shift of ep by <shift>." << endl;
+    cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
+    cerr << setw(60) << "   --eigenvalues"                                           << "Print eigenvalues." << endl;
+    cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
+    cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
+    cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
+    cerr << setw(60) << "   --normalize-at <sings>"                                  << "Normalize eigenvalues at the singularities <sings> (comma separated list)." << endl;
+    cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
+    cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
+    cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --left-fuchsify-at <sing>"                               << "Reduce Poincare rank of block to the left of the active block to zero." << endl;
+    cerr << setw(60) << "   --left-ranks"                                            << "Show Poincare ranks of block to the left of active block." << endl;
+    cerr << setw(60) << "   --left-reduce <sing>"                                    << "Reduce Poincare rank of block to the left of active block at singularity <sing> (manual approach). [arXiv:1411.0911, Section 7]" << endl;
+    cerr << setw(60) << "   --left-rmpoles-at <sing>"                                << "Remove poles in ep of block to the left of active block at singularity <sing>." << endl;
+    cerr << setw(60) << "   --jordan <sing>"                                         << "Transform residue at singularity <sing> to jordan normal form." << endl;
+    cerr << setw(60) << "   --jordan-ep <sing>"                                      << "Transform residue divided by ep at singularity <sing> to jordan normal form." << endl;
+    cerr << setw(60) << "   --dyson <filename> <order> (GPL|HPL|HPLalt) (mma|form)"  << "Write Dyson operator up to order <order> in ep to <filename>." << endl;
+    cerr << endl;
+    cerr << "ENVIRONMENT:" << endl;
+    cerr << setw(60) << "   FERMAT"                                                  << "Path to fermat executable. (default: fer64)" << endl;
+    exit(1);
+}
 
 static void executeFermat(Fermat *fermat, const string &filename) {
     ifstream file(filename);
@@ -160,7 +206,7 @@ static void sourceFermatFunctions(Fermat *fermat) {
     rmdir(tmpdir.c_str());
 }
 
-static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer, string echexe) {
+static void handleJobs(const string &progname, Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer, string echexe) {
     System *system = new System(fermat,echfer,echexe);
 
     for (auto it = jobs.begin(); it != jobs.end(); ++it) {
@@ -259,17 +305,29 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
             case Job::NormalizeAt: {
                 cout << endl << "normalize @ " << it->sing << endl << "---------------" << endl;
 
-                vector<FermatExpression> sings;
+                vector<FermatExpression> sings,locked;
 
                 for (auto &sing : split(it->sing)) {
-                    if (sing == "inf") {
-                        sings.push_back(infinity);
+                    if (sing.empty()) {
+                        usage(progname);
+                    }
+
+                    if (sing.front() == '!') {
+                        if (sing == "!inf") {
+                            locked.push_back(infinity);
+                        } else {
+                            locked.push_back(FermatExpression(fermat,string(sing,1)));
+                        }
                     } else {
-                        sings.push_back(FermatExpression(fermat,sing));
+                        if (sing == "inf") {
+                            sings.push_back(infinity);
+                        } else {
+                            sings.push_back(FermatExpression(fermat,sing));
+                        }
                     }
                 }
 
-                system->normalize(sings);
+                system->normalize(sings,locked);
 
                 cout << endl;
                 break;
@@ -396,53 +454,6 @@ static void handleJobs(Fermat *fermat, const vector<Job> &jobs, bool timings, bo
     }
 
     if (system) delete system;
-}
-
-static void usage(string progname) {
-    cerr << "Usage: " << progname << " [OPTIONS] JOBS..." << endl << endl;
-    cerr << left;
-
-    cerr << "OPTIONS:" << endl;
-    cerr << setw(60) << "   --verbose"                                               << "Enable verbose output." << endl;
-    cerr << setw(60) << "   --timings"                                               << "Enable timings." << endl;
-    cerr << setw(60) << "   --symbols <symbols>"                                     << "Add symbols to fermat. <symbols> should be a comma separated list." << endl;
-    cerr << setw(60) << "   --echelon-fermat"                                        << "Use fermat's Redrowech function to solve LSEs." << endl;
-    cerr << setw(60) << "   --echolon-custom <exe>"                                  << "Use a custom executable <exe> to solve LSEs." << endl;
-    cerr << setw(60) << "   --ev-denom <int>"                                        << "Allow eigenvalues of the form u+v*ep, where u,v are rational numbers with denominator <int>." << endl;
-    cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v (same as --ev-denom 2)." << endl;
-    cerr << endl;
-
-    cerr << "JOBS:" << endl;
-    cerr << setw(60) << "   --fermat <filename>"                                     << "Execute fermat commands from <filename>." << endl;
-    cerr << setw(60) << "   --load <filename> <start> <end>"                         << "Load system from <filename> with an active block from <start> to <end>." << endl;
-    cerr << setw(60) << "   --write <filename>"                                      << "Write system to <filename>." << endl;
-    cerr << setw(60) << "   --queue <filename>"                                      << "Use <filename> as transformation queue (overwrite mode)." << endl;
-    cerr << setw(60) << "   --queue-append <filename>"                               << "Use <filename> as transformation queue (append mode)." << endl;
-    cerr << setw(60) << "   --load-queue <filename>"                                 << "Load transformation queue from <filename>." << endl;
-    cerr << setw(60) << "   --replay"                                                << "Replay transformation queue." << endl;
-    cerr << setw(60) << "   --export <filename>"                                     << "Export transformation matrix as Mathematica(R) file <filename>." << endl;
-    cerr << setw(60) << "   --block <start> <end>"                                   << "Activate block from <start> to <end>." << endl;
-    cerr << setw(60) << "   --shift <shift>"                                         << "Set a shift of ep by <shift>." << endl;
-    cerr << setw(60) << "   --analyze"                                               << "Print informations about the active block." << endl;
-    cerr << setw(60) << "   --eigenvalues"                                           << "Print eigenvalues." << endl;
-    cerr << setw(60) << "   --fuchsify"                                              << "Put system into fuchsian form. [arXiv:1411.0911, Algorithm 2]" << endl;
-    cerr << setw(60) << "   --fuchsify-at <sing>"                                    << "Reduce Poincare rank of the singularity <sing> to zero." << endl;
-    cerr << setw(60) << "   --normalize"                                             << "Normalize eigenvalues. [arXiv:1411.0911, Algorithm 3]" << endl;
-    cerr << setw(60) << "   --normalize-at <sings>"                                  << "Normalize eigenvalues at the singularities <sings> (comma separated list)." << endl;
-    cerr << setw(60) << "   --factorep"                                              << "Put system into ep-form. Autodetect mu. [arXiv:1411.0911, Section 6]" << endl;
-    cerr << setw(60) << "   --factorep-at <mu>"                                      << "Put system into ep-form. Use mu=<mu>." << endl;
-    cerr << setw(60) << "   --left-fuchsify"                                         << "Put block to the left of the active block in fuchsian form (automatic approach). [arXiv:1411.0911, Section 7]" << endl;
-    cerr << setw(60) << "   --left-fuchsify-at <sing>"                               << "Reduce Poincare rank of block to the left of the active block to zero." << endl;
-    cerr << setw(60) << "   --left-ranks"                                            << "Show Poincare ranks of block to the left of active block." << endl;
-    cerr << setw(60) << "   --left-reduce <sing>"                                    << "Reduce Poincare rank of block to the left of active block at singularity <sing> (manual approach). [arXiv:1411.0911, Section 7]" << endl;
-    cerr << setw(60) << "   --left-rmpoles-at <sing>"                                << "Remove poles in ep of block to the left of active block at singularity <sing>." << endl;
-    cerr << setw(60) << "   --jordan <sing>"                                         << "Transform residue at singularity <sing> to jordan normal form." << endl;
-    cerr << setw(60) << "   --jordan-ep <sing>"                                      << "Transform residue divided by ep at singularity <sing> to jordan normal form." << endl;
-    cerr << setw(60) << "   --dyson <filename> <order> (GPL|HPL|HPLalt) (mma|form)"  << "Write Dyson operator up to order <order> in ep to <filename>." << endl;
-    cerr << endl;
-    cerr << "ENVIRONMENT:" << endl;
-    cerr << setw(60) << "   FERMAT"                                                  << "Path to fermat executable. (default: fer64)" << endl;
-    exit(1);
 }
 
 static int cmdline(string progname, vector<string> parameters) {
@@ -707,7 +718,7 @@ static int cmdline(string progname, vector<string> parameters) {
         clock_gettime(CLOCK_MONOTONIC_COARSE,&start);
     }
 
-    handleJobs(&fermat, jobs, timings, echfer, echexe);
+    handleJobs(progname, &fermat, jobs, timings, echfer, echexe);
 
     if (timings) {
         timespec diff;
