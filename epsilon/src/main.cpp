@@ -120,6 +120,7 @@ static void usage(string progname) {
     cerr << setw(60) << "   --echolon-custom <exe>"                                  << "Use a custom executable <exe> to solve LSEs." << endl;
     cerr << setw(60) << "   --ev-denom <int>"                                        << "Allow eigenvalues of the form u+v*ep, where u,v are rational numbers with denominator <int>." << endl;
     cerr << setw(60) << "   --half-ev"                                               << "Allow eigenvalues of the form u+v*ep, with half-integer u,v (same as --ev-denom 2)." << endl;
+    cerr << setw(60) << "   --ignore-columns <columns>"                              << "Ignore columns <columns> in --left-... commands." << endl;
     cerr << endl;
 
     cerr << "JOBS:" << endl;
@@ -206,7 +207,7 @@ static void sourceFermatFunctions(Fermat *fermat) {
     rmdir(tmpdir.c_str());
 }
 
-static void handleJobs(const string &progname, Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer, string echexe) {
+static void handleJobs(const string &progname, Fermat *fermat, const vector<Job> &jobs, bool timings, bool echfer, string echexe, const set<int> &ignore) {
     System *system = new System(fermat,echfer,echexe);
 
     for (auto it = jobs.begin(); it != jobs.end(); ++it) {
@@ -344,7 +345,7 @@ static void handleJobs(const string &progname, Fermat *fermat, const vector<Job>
                 break;
             case Job::LeftRanks:
                 cout << endl << "left-ranks" << endl << "----------" << endl;
-                system->leftranks();
+                system->leftranks(ignore);
                 cout << endl;
                 break;
             case Job::LeftReduce: {
@@ -358,14 +359,14 @@ static void handleJobs(const string &progname, Fermat *fermat, const vector<Job>
                     xj = FermatExpression(fermat,it->sing);
                 }
 
-                system->leftreduce(xj);
+                system->leftreduce(xj,ignore);
 
                 cout << endl;
                 break;
             }
             case Job::LeftFuchsify:
                 cout << endl << "left-fuchsify" << endl << "-------------" << endl;
-                system->leftfuchsify();
+                system->leftfuchsify(ignore);
                 cout << endl;
                 break;
             case Job::LeftFuchsifyAt: {
@@ -379,7 +380,7 @@ static void handleJobs(const string &progname, Fermat *fermat, const vector<Job>
                     xj = FermatExpression(fermat,it->sing);
                 }
 
-                system->leftfuchsify(xj);
+                system->leftfuchsify(xj,ignore);
 
                 cout << endl;
                 break;
@@ -395,7 +396,7 @@ static void handleJobs(const string &progname, Fermat *fermat, const vector<Job>
                     xj = FermatExpression(fermat,it->sing);
                 }
 
-                system->leftrmpoles(xj);
+                system->leftrmpoles(xj,ignore);
 
                 cout << endl;
                 break;
@@ -463,6 +464,7 @@ static int cmdline(string progname, vector<string> parameters) {
     bool timings = false;
     string echexe;
     bool echfer = false;
+    set<int> ignore;
     vector<Job> jobs;
 
     if (parameters.empty()) usage(progname);
@@ -493,6 +495,11 @@ static int cmdline(string progname, vector<string> parameters) {
             EVdenom = stoi(*it);
         } else if (*it == "--half-ev") {
             EVdenom = 2;
+        } else if (*it == "--ignore-columns") {
+            if (++it == parameters.end()) usage(progname);
+            for (auto &s : split(*it)) {
+                ignore.insert(stoi(s));
+            }
         } else if (*it == "--symbols") {
             if (++it == parameters.end()) usage(progname);
             symbols = split(*it);
@@ -718,7 +725,7 @@ static int cmdline(string progname, vector<string> parameters) {
         clock_gettime(CLOCK_MONOTONIC_COARSE,&start);
     }
 
-    handleJobs(progname, &fermat, jobs, timings, echfer, echexe);
+    handleJobs(progname, &fermat, jobs, timings, echfer, echexe, ignore);
 
     if (timings) {
         timespec diff;

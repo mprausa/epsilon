@@ -100,11 +100,12 @@ class System {
         void normalize(const std::vector<FermatExpression> &sings, const std::vector<FermatExpression> &locked);
         void factorep();
         void factorep(int mu);
-        void leftranks();
-        int leftreduce(const FermatExpression &xj);
-        void leftfuchsify();
-        void leftfuchsify(const FermatExpression &xj);
-        void leftrmpoles(const FermatExpression &xj);
+        int leftrank(const FermatExpression &xj, const std::set<int> &ignore = {});
+        void leftranks(const std::set<int> &ignore = {});
+        int leftreduce(const FermatExpression &xj, const std::set<int> &ignore = {});
+        void leftfuchsify(const std::set<int> &ignore = {});
+        void leftfuchsify(const FermatExpression &xj, const std::set<int> &ignore = {});
+        void leftrmpoles(const FermatExpression &xj, const std::set<int> &ignore = {});
         void tjordan(const FermatExpression &xj, bool divep);
 
         void balance(const FermatArray &P, const FermatExpression &x1, const FermatExpression &x2);

@@ -1133,20 +1133,33 @@ void System::factorep(int mu) {
     transform(T);
 }
 
-void System::leftranks() {
+int System::leftrank(const FermatExpression &xj, const set<int> &ignore) {
+    if (!singularities.count(xj)) return -1;
+
+    for (int k=singularities.at(xj).rank; k>=0; --k) {
+        auto B = A(xj,k).B;
+        bool zero = true;
+        for (int r=1; r<=B.rows() && zero; ++r) {
+            for (int c=1; c<=B.cols() && zero; ++c) {
+                if (ignore.count(c)) continue;
+                zero = (B(r,c).str() == "0");
+            }
+        }
+        if (!zero) return k;
+    }
+    return -1;
+}
+
+void System::leftranks(const set<int> &ignore) {
     for (auto &s : singularities) {
         FermatExpression xj = s.first;
-        int k;
-
-        for (k=s.second.rank; k>=0 && A(xj,k).B.isZero(); --k);
-
+        int k = leftrank(xj,ignore);
         if (k>=0) cout << "rank:\t" << pstr(xj) << ":" << k << endl;
     }
 }
 
-int System::leftreduce(const FermatExpression &xj) {
-    int k;
-    for (k=singularities.at(xj).rank; k>=0 && A(xj,k).B.isZero(); --k);
+int System::leftreduce(const FermatExpression &xj, const set<int> &ignore) {
+    int k = leftrank(xj,ignore);
 
     if (k<=0) {
         cout << pstr(xj) << " is already a fuchsian singularity." << endl;
@@ -1170,6 +1183,8 @@ int System::leftreduce(const FermatExpression &xj) {
 
     for (int i=1; i<=B.rows(); ++i) {
         for (int j=1; j<=B.cols(); ++j) {
+            if (ignore.count(j)) continue;
+
             map<int,FermatExpression> row;
 
             row[B.rows()*B.cols()+1] = B(i,j);
@@ -1183,6 +1198,7 @@ int System::leftreduce(const FermatExpression &xj) {
                 }
             }
             for (int n=1; n<=B.cols(); ++n) {
+                if (ignore.count(n)) continue;
                 if (row.count(pos(i,n))) {
                     row[pos(i,n)] = row[pos(i,n)]+A0.A(n,j);
                 } else {
@@ -1227,26 +1243,22 @@ int System::leftreduce(const FermatExpression &xj) {
 
     lefttransform(G,xj,k);
 
-    if (!A(xj,k).B.isZero()) {
+    int k1 = leftrank(xj,ignore);
+    if (k1 >= k) {
         throw invalid_argument("transformation failed.");
     }
 
-    for (--k; k>=0 && A(xj,k).B.isZero(); --k);
+    cout << "new rank:\t" << pstr(xj) <<":" << k1 << endl;
 
-    cout << "new rank:\t" << pstr(xj) <<":" << k << endl;
-
-    return k;
+    return k1;
 }
 
-void System::leftfuchsify() {
+void System::leftfuchsify(const set<int> &ignore) {
     auto sings = singularities;
 
     for (auto &s : sings) {
         FermatExpression xj = s.first;
-        int k;
-
-        for (k=s.second.rank; k>=0 && A(xj,k).B.isZero(); --k);
-
+        int k = leftrank(xj,ignore);
         if (k>=0) cout << "rank:    \t" << pstr(xj) << ":" << k << endl;
 
         while (k>0) {
@@ -1255,15 +1267,13 @@ void System::leftfuchsify() {
     }
 }
 
-void System::leftfuchsify(const FermatExpression &xj) {
-    int k;
-
+void System::leftfuchsify(const FermatExpression &xj, const set<int> &ignore) {
     if (!singularities.count(xj)) {
         cout << "no singularity at " << pstr(xj) << endl;
         return;
     }
 
-    for (k=singularities[xj].rank; k>=0 && A(xj,k).B.isZero(); --k);
+    int k = leftrank(xj,ignore);
 
     if (k<0) {
         cout << "off-diagonal block is not singular at " << pstr(xj) << endl;
@@ -1277,7 +1287,7 @@ void System::leftfuchsify(const FermatExpression &xj) {
     }
 }
 
-void System::leftrmpoles(const FermatExpression &xj) {
+void System::leftrmpoles(const FermatExpression &xj, const set<int> &ignore) {
     if (!singularities.count(xj)) {
         cout << "no singularity at " << pstr(xj) << endl;
         return;
@@ -1290,6 +1300,7 @@ void System::leftrmpoles(const FermatExpression &xj) {
         FermatArray B = A(xj,k).B;
         for (int rows=B.rows(), cols=B.cols(), r=1; r<=rows; ++r) {
             for (int c=1; c<=cols; ++c) {
+                if (ignore.count(c)) continue;
                 int n0 = B(r,c).denom().codeg("ep");
                 if (n0 > n) n = n0;
             }
