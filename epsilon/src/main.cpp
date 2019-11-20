@@ -498,7 +498,16 @@ static int cmdline(string progname, vector<string> parameters) {
         } else if (*it == "--ignore-columns") {
             if (++it == parameters.end()) usage(progname);
             for (auto &s : split(*it)) {
-                ignore.insert(stoi(s));
+                auto dash = s.find('-');
+                if (dash == string::npos) {
+                    ignore.insert(stoi(s));
+                } else {
+                    int start = stoi(s.substr(0,dash));
+                    int end = stoi(s.substr(dash+1));
+                    for (int n=start; n<=end; ++n) {
+                        ignore.insert(n);
+                    }
+                }
             }
         } else if (*it == "--symbols") {
             if (++it == parameters.end()) usage(progname);
@@ -723,6 +732,17 @@ static int cmdline(string progname, vector<string> parameters) {
 
     if (timings) {
         clock_gettime(CLOCK_MONOTONIC_COARSE,&start);
+    }
+
+    if (!ignore.empty()) {
+        cout << "ignoring columns: ";
+        bool first=true;
+        for (auto &c : ignore) {
+            if (!first) cout << ",";
+            cout << c;
+            first=false;
+        }
+        cout << endl;
     }
 
     handleJobs(progname, &fermat, jobs, timings, echfer, echexe, ignore);
