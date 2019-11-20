@@ -1262,7 +1262,7 @@ void System::leftfuchsify(const set<int> &ignore) {
         if (k>=0) cout << "rank:    \t" << pstr(xj) << ":" << k << endl;
 
         while (k>0) {
-            k = leftreduce(xj);
+            k = leftreduce(xj,ignore);
         }
     }
 }
